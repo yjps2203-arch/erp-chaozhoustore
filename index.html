@@ -327,10 +327,13 @@ async function sbPost(t, b) { const r=await fetch(`${SB_URL}/rest/v1/${t}`,{meth
 async function sbPatch(t, id, b) { const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{...HDR,Prefer:'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); }
 async function sbDelete(t, id) { const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:{...HDR,Prefer:'return=minimal'}}); if(!r.ok)throw new Error(await r.text()); }
 
+// ── 全域共用：最先宣告，任何地方都能使用 ──
+const DEFAULT_PW = '1234';
+const $ = id => document.getElementById(id);
+
 // ══════════════════════════════════════════════
 //  LOCK SCREEN
 // ══════════════════════════════════════════════
-const DEFAULT_PW = '1234';
 function doUnlock() {
   const pw = $('lock-pw').value;
   const stored = localStorage.getItem('erp_pw') || DEFAULT_PW;
@@ -363,7 +366,6 @@ const TITLES = {quick:'⚡ 快速輸入',dashboard:'營運總覽',daily:'每日�
 // ══════════════════════════════════════════════
 //  HELPERS
 // ══════════════════════════════════════════════
-const $ = id => document.getElementById(id);
 function sync(s,lbl){['sdot','sdot2','sdot3'].forEach(id=>{const d=$(id);if(d)d.className='sync-dot '+s});['slabel','slabel2'].forEach(id=>{const l=$(id);if(l)l.textContent=lbl});}
 function loading(on){const f=$('lf');if(!f)return;if(on){f.style.opacity='1';f.style.width='0';requestAnimationFrame(()=>f.style.width='65%');}else{f.style.width='100%';setTimeout(()=>{f.style.opacity='0';setTimeout(()=>f.style.width='0',300)},200);}}
 function toast(msg,type=''){const c=$('toasts');if(!c)return;const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;c.appendChild(el);setTimeout(()=>{el.style.transition='opacity .3s,transform .3s';el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),320)},2600);}
@@ -484,20 +486,7 @@ async function saveQuick(){
   const data={date,store:Number($('qi-store').value||0),foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),note:$('qi-note').value};
   const [row]=await sbPost('daily',data);C.daily.push(row);
   toast('今日記錄已儲存 ✓','ok');
-  // LINE notify
-  const lineToken=localStorage.getItem('erp_line_token');
-  if(lineToken){
-    const r=rev(row);
-    sendLineNotify(lineToken,`🏪 潮州店今日營收\n日期：${date}\n門市：${$$(data.store)}\nFP實收：${$$(data.foodpanda*.67)}\nUE實收：${$$(data.ubereats*.69)}\n━━━━━━━━\n今日實收：${$$(r.total)}`);
-  }
   if(btn){btn.disabled=false;btn.innerHTML='💾 儲存今日記錄';}
-}
-
-// LINE NOTIFY
-async function sendLineNotify(token,msg){
-  try{
-    await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent(msg)});
-  }catch(e){console.warn('LINE notify failed',e);}
 }
 
 // ══════════════════════════════════════════════
@@ -893,7 +882,6 @@ async function delInv(id){if(!confirm('確定刪除此庫存品項？'))return;a
 //  SETTINGS
 // ══════════════════════════════════════════════
 function renderSettings(){
-  const lineToken=localStorage.getItem('erp_line_token')||'';
   const currPw=localStorage.getItem('erp_pw')||DEFAULT_PW;
   $('content').innerHTML=`
   <div class="st" style="margin-bottom:16px">系統設定</div>
@@ -906,17 +894,6 @@ function renderSettings(){
     </div>
     <button class="btn btn-p btn-sm" onclick="saveTarget()">儲存目標</button>
     <div id="tgt-cur" class="tsm tmut mt8"></div>
-  </div>
-
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-title">🔔 LINE 通知設定</div>
-    <div class="fg" style="margin-bottom:10px"><label>LINE Notify Token</label><input type="text" id="line-token" placeholder="輸入你的 LINE Notify Token" value="${lineToken}"></div>
-    <div class="rf" style="gap:8px">
-      <button class="btn btn-ok btn-sm" onclick="saveLineToken()">儲存 Token</button>
-      <button class="btn btn-info btn-sm" onclick="testLine()">測試發送</button>
-      ${lineToken?'<span class="tsm tok">✓ 已設定</span>':'<span class="tsm tdan">未設定</span>'}
-    </div>
-    <div class="tsm tmut mt8">儲存每日記錄時自動發送 LINE 通知。Token 儲存在本機瀏覽器。</div>
   </div>
 
   <div class="card" style="margin-bottom:12px">
@@ -964,13 +941,6 @@ async function saveTarget(){
   toast(`${y}年${m}月目標已設定：${$$(amt)}`,'ok');showCurrentTarget();
 }
 
-// LINE
-function saveLineToken(){const t=$('line-token')?.value?.trim();localStorage.setItem('erp_line_token',t);toast('LINE Token 已儲存','ok');renderSettings();}
-async function testLine(){
-  const t=localStorage.getItem('erp_line_token');if(!t)return alert('請先填寫並儲存 LINE Token');
-  await sendLineNotify(t,'🧪 二鍋頭潮州店 — LINE 通知測試成功！');toast('測試通知已發送，請查看 LINE','ok');
-}
-
 // Password
 function changePw(){
   const n=$('pw-new')?.value,c=$('pw-confirm')?.value;
@@ -1005,7 +975,6 @@ $('tdate').textContent=NOW.toLocaleDateString('zh-TW',{year:'numeric',month:'lon
 // ══════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════
-const DEFAULT_PW = '1234';
 async function bootApp(){
   sync('syncing','連線中...');
   try{
