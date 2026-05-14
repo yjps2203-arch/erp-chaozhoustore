@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>二鍋頭東山鴨頭・潮州店 營運管理系統</title>
+<meta name="theme-color" content="#36261a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="潮州店ERP">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%E4%BA%8C%E9%8D%8B%E9%A0%AD%E6%BD%AE%E5%B7%9E%E5%BA%97%22%2C%22short_name%22%3A%22%E6%BD%AE%E5%B7%9E%E5%BA%97ERP%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23fdf8f3%22%2C%22theme_color%22%3A%22%2336261a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bcharset%3Dutf-8%2C%253Csvg%2520xmlns%253D%2527http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2527%2520viewBox%253D%25270%25200%2520192%2520192%2527%253E%253Crect%2520width%253D%2527192%2527%2520height%253D%2527192%2527%2520rx%253D%252732%2527%2520fill%253D%2527%252336261a%2527%252F%253E%253Ctext%2520x%253D%252796%2527%2520y%253D%2527130%2527%2520font-size%253D%2527110%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%25A6%2586%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -155,7 +160,30 @@ tr:hover td{background:var(--milk-50)}
 /* ── CHART ── */
 .chart-wrap{position:relative;height:220px}
 
-/* ── MOBILE ── */
+/* ── INVENTORY BANNER ── */
+.inv-banner{background:var(--danger-bg);border-bottom:1px solid #e8c0c0;padding:8px 24px;font-size:12.5px;color:var(--danger);display:none;align-items:center;gap:8px;cursor:pointer}
+.inv-banner.show{display:flex}
+.inv-banner-close{margin-left:auto;background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px}
+
+/* ── BREAKEVEN ── */
+.be-result{background:var(--milk-100);border-radius:12px;padding:20px;text-align:center;margin-top:16px}
+.be-amount{font-size:36px;font-weight:700;font-family:'Noto Serif TC',serif;color:var(--text-primary)}
+.be-label{font-size:12px;color:var(--text-muted);margin-top:4px}
+.be-meter{height:12px;background:var(--border-light);border-radius:6px;overflow:hidden;margin:12px 0}
+.be-fill{height:100%;border-radius:6px;transition:width .6s ease}
+.be-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+.be-item{background:var(--warm-white);border:1px solid var(--border-light);border-radius:8px;padding:10px;text-align:center}
+.be-item-val{font-size:15px;font-weight:700;font-family:'Noto Serif TC',serif}
+.be-item-lbl{font-size:10px;color:var(--text-muted);margin-top:2px}
+
+/* ── FIXED EXPENSE TEMPLATE ── */
+.tpl-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--border-light);border-radius:8px;margin-bottom:6px;background:var(--warm-white)}
+.tpl-apply-row{background:var(--info-bg);border:1px solid #b0c8e8;border-radius:10px;padding:12px 14px;margin-top:10px}
+
+@media(max-width:768px){
+  .inv-banner{padding:8px 14px}
+  .be-grid{grid-template-columns:1fr 1fr}
+}
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--milk-900);z-index:200;padding:0 0 env(safe-area-inset-bottom);border-top:1px solid rgba(255,255,255,.1)}
 .bnav-inner{display:flex;align-items:stretch}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 2px;cursor:pointer;color:var(--milk-500);font-size:9px;gap:3px;transition:color .18s;border:none;background:none;font-family:'Noto Sans TC',sans-serif;line-height:1.2;min-height:50px}
@@ -233,6 +261,7 @@ tr:hover td{background:var(--milk-50)}
       <div class="nav-section">
         <div class="nav-label">管理</div>
         <div class="nav-item" data-p="inventory">📦 庫存管理</div>
+        <div class="nav-item" data-p="breakeven">⚖️ 損益平衡</div>
         <div class="nav-item" data-p="settings">⚙ 系統設定</div>
       </div>
     </nav>
@@ -248,8 +277,14 @@ tr:hover td{background:var(--milk-50)}
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <div class="topbar-date" id="tdate"></div>
+        <button id="pwa-install-btn" onclick="installPWA()" style="display:none;background:var(--milk-100);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--milk-700);cursor:pointer;font-family:'Noto Sans TC',sans-serif">📲 安裝App</button>
         <div class="sync-row" style="margin:0"><div class="sync-dot online" id="sdot2"></div></div>
       </div>
+    </div>
+    <!-- 庫存警示橫幅 -->
+    <div class="inv-banner" id="inv-banner" onclick="navigate('inventory')">
+      <span id="inv-banner-text"></span>
+      <button class="inv-banner-close" onclick="event.stopPropagation();this.parentElement.classList.remove('show')">✕</button>
     </div>
     <div class="content" id="content">
       <div class="ploading"><div class="pspin"></div>連線至 Supabase...</div>
@@ -298,6 +333,7 @@ tr:hover td{background:var(--milk-50)}
     <div class="nav-section">
       <div class="nav-label">管理</div>
       <div class="nav-item" data-dp="inventory" onclick="navMobile('inventory')">📦 庫存管理</div>
+      <div class="nav-item" data-dp="breakeven" onclick="navMobile('breakeven')">⚖️ 損益平衡</div>
       <div class="nav-item" data-dp="settings" onclick="navMobile('settings')">⚙ 系統設定</div>
     </div>
   </nav>
@@ -361,7 +397,6 @@ const DEFAULT_VENDORS = ['泰禾食品','振昌肉品','大成食品','家樂福
 const DEFAULT_ITEMS_A = ['豬肉','鴨頭','鴨頸','鴨翅','鴨腳','豆腐','蔬菜','香料','醬料','油品'];
 const DEFAULT_ITEMS_B = ['包裝袋','紙袋','打包盒','免洗餐具','衛生紙','塑膠袋','標籤貼紙'];
 const EXP_TYPES = ['人事薪資','租金','電信費','台電','水電費','其他'];
-const TITLES = {quick:'⚡ 快速輸入',dashboard:'營運總覽',daily:'每日營業額',purchase:'進貨記錄',holidays:'公休日管理',monthly:'月度報表',staff:'人事薪資',expense:'支出管理',analysis:'成本分析',yearly:'年度報表',chart:'趨勢圖表',inventory:'庫存管理',settings:'系統設定'};
 
 // ══════════════════════════════════════════════
 //  HELPERS
@@ -410,10 +445,12 @@ async function ensureCol(col){
   if(!C.loaded[col]&&map[col]){C[col]=await sbGet(map[col]);C.loaded[col]=true;}
 }
 
+const TITLES = {quick:'⚡ 快速輸入',dashboard:'營運總覽',daily:'每日營業額',purchase:'進貨記錄',holidays:'公休日管理',monthly:'月度報表',staff:'人事薪資',expense:'支出管理',analysis:'成本分析',yearly:'年度報表',chart:'趨勢圖表',inventory:'庫存管理',breakeven:'⚖️ 損益平衡試算',settings:'系統設定'};
+
 // ══════════════════════════════════════════════
 //  ROUTER
 // ══════════════════════════════════════════════
-const PAGE_NEEDS={quick:['daily'],dashboard:['daily','purchases','staff','expenses','targets'],daily:['daily','holidays'],purchase:['purchases'],holidays:['holidays'],monthly:['daily','purchases','staff','expenses','targets'],staff:['staff'],expense:['expenses','staff','purchases'],analysis:['daily','purchases','staff','expenses'],yearly:['daily','purchases','staff','expenses'],chart:['daily'],inventory:['inventory'],settings:[]};
+const PAGE_NEEDS={quick:['daily'],dashboard:['daily','purchases','staff','expenses','targets'],daily:['daily','holidays'],purchase:['purchases'],holidays:['holidays'],monthly:['daily','purchases','staff','expenses','targets'],staff:['staff'],expense:['expenses','staff','purchases'],analysis:['daily','purchases','staff','expenses'],yearly:['daily','purchases','staff','expenses'],chart:['daily'],inventory:['inventory'],breakeven:['expenses','staff','purchases','daily'],settings:[]};
 
 async function navigate(page){
   document.querySelectorAll('.nav-item[data-p]').forEach(el=>el.classList.toggle('active',el.dataset.p===page));
@@ -424,7 +461,7 @@ async function navigate(page){
   loading(true);
   for(const col of PAGE_NEEDS[page]||[])await ensureCol(col);
   loading(false);window.scrollTo(0,0);
-  ({quick:renderQuick,dashboard:renderDash,daily:renderDaily,purchase:renderPurchase,holidays:renderHolidays,monthly:renderMonthly,staff:renderStaff,expense:renderExpense,analysis:renderAnalysis,yearly:renderYearly,chart:renderChart,inventory:renderInventory,settings:renderSettings})[page]?.();
+  ({quick:renderQuick,dashboard:renderDash,daily:renderDaily,purchase:renderPurchase,holidays:renderHolidays,monthly:renderMonthly,staff:renderStaff,expense:renderExpense,analysis:renderAnalysis,yearly:renderYearly,chart:renderChart,inventory:renderInventory,breakeven:renderBreakeven,settings:renderSettings})[page]?.();
 }
 
 // ══════════════════════════════════════════════
@@ -700,7 +737,9 @@ function renderExpense(){$('content').innerHTML=`<div class="sh"><div class="st"
 function rendExp(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const list=exYM(y,m),oT=list.reduce((s,e)=>s+Number(e.amount||0),0),sT=stYM(y,m).reduce((s,st)=>s+Number(st.salary||0),0),pT=puYM(y,m).reduce((s,p)=>s+Number(p.amount||0),0),grand=oT+sT+pT;
-  $('eb').innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">固定支出</div><div class="mv">${$$(oT)}</div></div><div class="metric"><div class="ml">人事薪資</div><div class="mv">${$$(sT)}</div></div><div class="metric"><div class="ml">進貨成本</div><div class="mv">${$$(pT)}</div></div></div><div class="metric mt12" style="max-width:240px"><div class="ml">當月支出總計</div><div class="mv fser">${$$(grand)}</div></div><div class="card mt12"><table><thead><tr><th>類型</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>${list.map(e=>`<tr><td>${e.type}</td><td class="fb">${$$(e.amount)}</td><td class="tmut tsm">${e.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delExp('${e.id}')">刪除</button></td></tr>`).join('')}${list.length===0?'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">尚無固定支出</td></tr>':''}</tbody></table></div><div class="alert a-i mt12">換月後需重新填寫；進貨成本與人事薪資自動帶入</div>`;
+  $('eb').innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">固定支出</div><div class="mv">${$$(oT)}</div></div><div class="metric"><div class="ml">人事薪資</div><div class="mv">${$$(sT)}</div></div><div class="metric"><div class="ml">進貨成本</div><div class="mv">${$$(pT)}</div></div></div><div class="metric mt12" style="max-width:240px"><div class="ml">當月支出總計</div><div class="mv fser">${$$(grand)}</div></div>
+  ${renderExpTemplateSection()}
+  <div class="card mt12"><table><thead><tr><th>類型</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>${list.map(e=>`<tr><td>${e.type}</td><td class="fb">${$$(e.amount)}</td><td class="tmut tsm">${e.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delExp('${e.id}')">刪除</button></td></tr>`).join('')}${list.length===0?'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">尚無固定支出</td></tr>':''}</tbody></table></div><div class="alert a-i mt12">換月後需重新填寫；進貨成本與人事薪資自動帶入</div>`;
 }
 function showExpModal(){showModal(`<div class="mtitle">新增支出</div><div class="fr c2"><div class="fg"><label>類型</label><select id="e-t" onchange="togExpC()">${EXP_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="fg"><label>金額</label><input type="number" id="e-a" placeholder="0" min="0"></div></div><div id="ec" style="display:none" class="fg mt8"><label>自訂類型</label><input type="text" id="e-ct" placeholder="輸入類型"></div><div class="fg mt8"><label>備註</label><input type="text" id="e-n" placeholder="可選"></div><div class="divider"></div><div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bse" onclick="saveExp()">儲存</button></div>`);}
 function togExpC(){const t=$('e-t')?.value,r=$('ec');if(r)r.style.display=t==='其他'?'block':'none';}
@@ -879,10 +918,205 @@ async function adjInv(id,delta,unit){
 async function delInv(id){if(!confirm('確定刪除此庫存品項？'))return;await sbDelete('inventory',id);C.inventory=C.inventory.filter(i=>i.id!==id);toast('已刪除');rendInv();}
 
 // ══════════════════════════════════════════════
+//  BREAKEVEN 損益平衡試算
+// ══════════════════════════════════════════════
+function renderBreakeven(){
+  // Pull current month actuals as defaults
+  const pC=puYM(selYear,selMonth).reduce((s,p)=>s+Number(p.amount||0),0);
+  const sC=stYM(selYear,selMonth).reduce((s,st)=>s+Number(st.salary||0),0);
+  const oC=exYM(selYear,selMonth).reduce((s,e)=>s+Number(e.amount||0),0);
+  const tRev=dyYM(selYear,selMonth).reduce((s,d)=>s+rev(d).total,0);
+  const grossMarginPct = tRev>0 ? Math.round(((tRev-(pC))/tRev)*100) : 65;
+
+  $('content').innerHTML=`
+  <div class="card">
+    <div class="card-title">⚖️ 損益平衡點試算</div>
+    <div class="fr c2">
+      <div class="fg"><label>固定成本（月租金＋電費等）</label><input type="number" id="be-fixed" placeholder="0" min="0" value="${oC||0}" oninput="calcBE()"></div>
+      <div class="fg"><label>人事薪資（月）</label><input type="number" id="be-staff" placeholder="0" min="0" value="${sC||0}" oninput="calcBE()"></div>
+    </div>
+    <div class="fr c2">
+      <div class="fg"><label>毛利率（%）<span class="tsm tmut">＝（營業額－食材成本）÷ 營業額</span></label><input type="number" id="be-margin" placeholder="65" min="1" max="99" value="${grossMarginPct}" oninput="calcBE()"></div>
+      <div class="fg"><label>本月實際營業額（參考）</label><input type="number" id="be-actual" placeholder="0" min="0" value="${Math.round(tRev)||0}" oninput="calcBE()"></div>
+    </div>
+    <div id="be-result"></div>
+  </div>
+  <div class="card mt12">
+    <div class="card-title">📐 公式說明</div>
+    <div style="font-size:13px;color:var(--text-secondary);line-height:2">
+      損益平衡點 ＝ 固定成本 ÷ 毛利率<br>
+      <span class="tsm tmut">達到此金額即不虧損，超過即開始獲利</span><br>
+      毛利率 ＝（實收營業額 － 進貨食材成本）÷ 實收營業額 × 100%
+    </div>
+  </div>`;
+  calcBE();
+}
+
+function calcBE(){
+  const fixed=Number($('be-fixed')?.value||0);
+  const staff=Number($('be-staff')?.value||0);
+  const margin=Number($('be-margin')?.value||65)/100;
+  const actual=Number($('be-actual')?.value||0);
+  const totalFixed=fixed+staff;
+  if(margin<=0||margin>=1){const r=$('be-result');if(r)r.innerHTML='<div class="alert a-w mt12">毛利率請輸入 1～99 之間的數值</div>';return;}
+  const bep=Math.ceil(totalFixed/margin);
+  const gap=actual-bep;
+  const pct=bep>0?Math.min(actual/bep*100,150):0;
+  const safetyMargin=bep>0?((actual-bep)/bep*100).toFixed(1):0;
+  const dailyNeed=Math.ceil(bep/26);
+  const r=$('be-result');if(!r)return;
+  r.innerHTML=`
+    <div class="be-result ${gap>=0?'':' '}">
+      <div class="be-label">每月損益平衡點</div>
+      <div class="be-amount ${gap>=0?'tok':'tdan'}">${$$(bep)}</div>
+      <div class="be-label" style="margin-top:4px">${gap>=0?`超出平衡點 ${$$(gap)}，本月已獲利 ✓`:`距平衡點還差 ${$$(-gap)}，需繼續努力`}</div>
+      <div class="be-meter">
+        <div class="be-fill ${pct>=100?'pok':pct>=70?'pw':'pd'}" style="width:${Math.min(pct,100)}%"></div>
+      </div>
+      <div class="tsm tmut">目前達成率 ${pct.toFixed(1)}%</div>
+    </div>
+    <div class="be-grid">
+      <div class="be-item"><div class="be-item-val">${$$(totalFixed)}</div><div class="be-item-lbl">月固定成本</div></div>
+      <div class="be-item"><div class="be-item-val">${dailyNeed.toLocaleString()}</div><div class="be-item-lbl">每日最低目標（以26天計）</div></div>
+      <div class="be-item"><div class="be-item-val ${Number(safetyMargin)>=0?'tok':'tdan'}">${safetyMargin}%</div><div class="be-item-lbl">安全邊際率</div></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  FIXED EXPENSE TEMPLATE 固定支出範本
+// ══════════════════════════════════════════════
+function getExpTemplates(){
+  try{return JSON.parse(localStorage.getItem('erp_exp_tpl')||'[]');}catch(e){return[];}
+}
+function saveExpTemplates(tpls){localStorage.setItem('erp_exp_tpl',JSON.stringify(tpls));}
+
+function renderExpTemplateSection(){
+  const tpls=getExpTemplates();
+  return `<div class="tpl-apply-row">
+    <div style="font-size:12px;font-weight:500;color:var(--info);margin-bottom:8px">🔁 固定支出範本</div>
+    ${tpls.length===0?'<div class="tsm tmut">尚未設定範本，請至系統設定 → 固定支出範本新增</div>':`
+      <div class="tsm tmut" style="margin-bottom:8px">共 ${tpls.length} 個項目，合計 ${$$(tpls.reduce((s,t)=>s+Number(t.amount),0))}</div>
+      <button class="btn btn-info btn-sm" onclick="applyExpTemplates()">⚡ 一鍵套用本月固定支出</button>
+    `}
+  </div>`;
+}
+
+async function applyExpTemplates(){
+  const tpls=getExpTemplates();
+  if(!tpls.length)return alert('尚未設定固定支出範本');
+  if(!confirm(`確定套用 ${tpls.length} 項固定支出到 ${selYear}年${selMonth}月？\n（重複項目會跳過）`))return;
+  let added=0;
+  for(const tpl of tpls){
+    const exists=exYM(selYear,selMonth).find(e=>e.type===tpl.type&&Number(e.amount)===Number(tpl.amount));
+    if(!exists){
+      const[row]=await sbPost('expenses',{year:selYear,month:selMonth,type:tpl.type,amount:Number(tpl.amount),note:'範本自動套用'});
+      C.expenses.push(row);added++;
+    }
+  }
+  toast(`已套用 ${added} 項固定支出`,'ok');
+  rendExp();
+}
+
+// ══════════════════════════════════════════════
+//  BROWSER PUSH NOTIFICATION 瀏覽器推播提醒
+// ══════════════════════════════════════════════
+async function requestNotifyPermission(){
+  if(!('Notification' in window))return alert('此瀏覽器不支援推播通知');
+  const perm=await Notification.requestPermission();
+  if(perm==='granted'){
+    localStorage.setItem('erp_notify','1');
+    toast('推播通知已開啟 🔔','ok');
+    scheduleNotification();
+    renderSettings();
+  } else {
+    toast('通知權限被拒絕，請至瀏覽器設定允許','warn');
+  }
+}
+
+function scheduleNotification(){
+  if(localStorage.getItem('erp_notify')!=='1')return;
+  if(Notification.permission!=='granted')return;
+  const now=new Date();
+  // Check if today's record exists
+  const todayStr=now.toISOString().split('T')[0];
+  const hasTodayRecord=C.daily.some(d=>d.date===todayStr);
+  if(!hasTodayRecord){
+    const hour=now.getHours();
+    // Only remind between 18:00-22:00
+    if(hour>=18&&hour<22){
+      new Notification('二鍋頭潮州店 提醒 🦆',{body:`今天（${todayStr}）還沒填營業額，記得記錄今日業績！`,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🦆</text></svg>'});
+    }
+  }
+}
+
+function checkDailyNotification(){
+  if(localStorage.getItem('erp_notify')!=='1')return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const lastCheck=localStorage.getItem('erp_notify_check');
+  const today=new Date().toDateString();
+  if(lastCheck===today)return; // Already checked today
+  localStorage.setItem('erp_notify_check',today);
+  setTimeout(scheduleNotification, 3000); // Delay 3s after load
+}
+
+// ══════════════════════════════════════════════
+//  PWA INSTALL
+// ══════════════════════════════════════════════
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  const btn=$('pwa-install-btn');if(btn)btn.style.display='block';
+});
+window.addEventListener('appinstalled',()=>{
+  deferredPrompt=null;
+  const btn=$('pwa-install-btn');if(btn)btn.style.display='none';
+  toast('App 安裝成功！可從主畫面開啟 📲','ok');
+});
+async function installPWA(){
+  if(!deferredPrompt){
+    // iOS guide
+    showModal(`<div class="mtitle">📲 安裝到手機主畫面</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text-secondary)">
+        <div style="margin-bottom:12px"><strong style="color:var(--text-primary)">iPhone / iPad（Safari）：</strong><br>
+        1. 點底部 <strong>分享</strong> 按鈕（方形加箭頭）<br>
+        2. 往下滑找到 <strong>加入主畫面</strong><br>
+        3. 點右上角 <strong>新增</strong></div>
+        <div><strong style="color:var(--text-primary)">Android（Chrome）：</strong><br>
+        1. 點右上角 <strong>⋮ 選單</strong><br>
+        2. 點 <strong>新增至主畫面</strong> 或 <strong>安裝應用程式</strong></div>
+      </div>
+      <div class="divider"></div>
+      <div class="rf" style="justify-content:flex-end"><button class="btn btn-p" onclick="closeModal()">了解</button></div>`);
+    return;
+  }
+  deferredPrompt.prompt();
+  const{outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted')toast('正在安裝...','ok');
+  deferredPrompt=null;
+}
+
+// ══════════════════════════════════════════════
+//  INVENTORY BANNER 庫存警示
+// ══════════════════════════════════════════════
+function checkInventoryBanner(){
+  const alerts=C.inventory.filter(i=>Number(i.current_qty)<=Number(i.alert_qty));
+  const banner=$('inv-banner'),text=$('inv-banner-text');
+  if(!banner||!text)return;
+  if(alerts.length>0){
+    text.textContent=`⚠️ 庫存警示：${alerts.map(i=>i.name).join('、')} 庫存不足，點此查看`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+// ══════════════════════════════════════════════
 //  SETTINGS
 // ══════════════════════════════════════════════
 function renderSettings(){
   const currPw=localStorage.getItem('erp_pw')||DEFAULT_PW;
+  const notifyOn=localStorage.getItem('erp_notify')==='1'&&('Notification' in window)&&Notification.permission==='granted';
+  const tpls=getExpTemplates();
   $('content').innerHTML=`
   <div class="st" style="margin-bottom:16px">系統設定</div>
 
@@ -894,6 +1128,36 @@ function renderSettings(){
     </div>
     <button class="btn btn-p btn-sm" onclick="saveTarget()">儲存目標</button>
     <div id="tgt-cur" class="tsm tmut mt8"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🔁 固定支出範本</div>
+    <div class="tsm tmut" style="margin-bottom:10px">設定每月固定支出，換月後一鍵套用，不用重複填寫</div>
+    <div id="tpl-list">${tpls.map((t,i)=>`<div class="tpl-item"><span class="tsm fb">${t.type}</span><span class="tsm">${$$(t.amount)}</span><button class="btn btn-d btn-sm" onclick="delExpTpl(${i})">✕</button></div>`).join('')}${tpls.length===0?'<div class="tsm tmut">尚無範本</div>':''}</div>
+    <div class="fr c3 mt8">
+      <div class="fg"><label>支出類型</label><select id="tpl-type">${EXP_TYPES.map(t=>`<option>${t}</option>`).join('')}<option value="__c__">自訂...</option></select></div>
+      <div class="fg"><label>金額</label><input type="number" id="tpl-amt" placeholder="0" min="0"></div>
+      <div class="fg" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn btn-p btn-sm" onclick="addExpTpl()" style="margin-top:auto">新增</button></div>
+    </div>
+    <div id="tpl-custom" style="display:none" class="fg mt8"><label>自訂類型名稱</label><input type="text" id="tpl-custom-txt" placeholder="輸入類型"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🔔 每日提醒通知</div>
+    <div class="tsm tmut" style="margin-bottom:10px">每天晚上 6~10 點，若尚未填寫當日營業額，自動推播提醒</div>
+    <div class="rf">
+      ${notifyOn
+        ?`<span class="tsm tok">✓ 通知已開啟</span><button class="btn btn-s btn-sm" onclick="disableNotify()">關閉通知</button>`
+        :`<button class="btn btn-p btn-sm" onclick="requestNotifyPermission()">🔔 開啟每日提醒</button>`
+      }
+    </div>
+    <div class="tsm tmut mt8">通知設定儲存於本機瀏覽器，需在想接收通知的裝置各別開啟</div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">📲 安裝為 App</div>
+    <div class="tsm tmut" style="margin-bottom:10px">將系統安裝到手機主畫面，像 App 一樣快速開啟</div>
+    <button class="btn btn-p btn-sm" onclick="installPWA()">📲 安裝到主畫面</button>
   </div>
 
   <div class="card" style="margin-bottom:12px">
@@ -920,8 +1184,30 @@ function renderSettings(){
   </div>
 
   <button class="btn btn-d btn-sm" onclick="lockScreen()">🔒 鎖定系統</button>`;
+
+  // Bind template type custom toggle
+  const tplType=$('tpl-type');
+  if(tplType)tplType.addEventListener('change',function(){$('tpl-custom').style.display=this.value==='__c__'?'block':'none';});
+
   rendChips();showCurrentTarget();
 }
+
+// Fixed expense template CRUD
+function addExpTpl(){
+  const typeSel=$('tpl-type')?.value;
+  const type=typeSel==='__c__'?($('tpl-custom-txt')?.value?.trim()||'其他'):typeSel;
+  const amount=Number($('tpl-amt')?.value||0);
+  if(!type||!amount)return alert('請填寫類型與金額');
+  const tpls=getExpTemplates();
+  tpls.push({type,amount});saveExpTemplates(tpls);
+  toast('已加入範本','ok');renderSettings();
+}
+function delExpTpl(idx){
+  if(!confirm('確定移除此範本項目？'))return;
+  const tpls=getExpTemplates();tpls.splice(idx,1);saveExpTemplates(tpls);
+  toast('已移除');renderSettings();
+}
+function disableNotify(){localStorage.removeItem('erp_notify');toast('通知已關閉');renderSettings();}
 
 // Target
 async function showCurrentTarget(){
@@ -985,6 +1271,11 @@ async function bootApp(){
     C.inventory=await sbGet('inventory');C.loaded['inventory']=true;
     sync('online','Supabase 已連線');
     navigate('quick');
+    // Check inventory banner and notification after short delay
+    setTimeout(()=>{
+      checkInventoryBanner();
+      checkDailyNotification();
+    }, 1000);
   }catch(e){
     console.error(e);sync('error','連線失敗');
     $('content').innerHTML=`<div style="padding:40px 24px"><div class="alert a-d">⚠️ 連線至 Supabase 失敗：${e.message}<br><br>請確認網路連線與資料表是否建立完成。</div></div>`;
