@@ -2,9 +2,10 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>二鍋頭東山鴨頭・潮州店 營運管理系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -20,220 +21,193 @@
 }
 body{font-family:'Noto Sans TC',sans-serif;background:var(--milk-50);color:var(--text-primary);font-size:14px;line-height:1.6;min-height:100vh}
 .app{display:flex;min-height:100vh}
-
-/* Sidebar */
 .sidebar{width:224px;background:var(--milk-900);color:#f5ead8;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
-.sidebar-brand{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
-.brand-logo{font-family:'Noto Serif TC',serif;font-size:13.5px;font-weight:700;color:#f5ead8;line-height:1.45}
-.brand-sub{font-size:10px;color:var(--milk-400);margin-top:3px;letter-spacing:.6px}
+.sidebar-brand{padding:20px 16px 14px;border-bottom:1px solid rgba(255,255,255,.1)}
+.brand-logo{font-family:'Noto Serif TC',serif;font-size:13px;font-weight:700;color:#f5ead8;line-height:1.45}
+.brand-sub{font-size:10px;color:var(--milk-400);margin-top:3px;letter-spacing:.5px}
 .sync-row{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:10px;color:var(--milk-500)}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--milk-600);flex-shrink:0;transition:background .4s}
-.sync-dot.online{background:#4a9c69}
-.sync-dot.syncing{background:#c49c2a;animation:blink .9s infinite}
-.sync-dot.error{background:#a84040}
+.sync-dot.online{background:#4a9c69}.sync-dot.syncing{background:#c49c2a;animation:blink .9s infinite}.sync-dot.error{background:#a84040}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.sidebar-nav{flex:1;padding:12px 8px}
-.nav-section{margin-bottom:18px}
-.nav-label{font-size:9px;letter-spacing:1.6px;color:var(--milk-500);padding:0 8px;margin-bottom:6px;text-transform:uppercase}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--milk-300);transition:all .18s;margin-bottom:2px;user-select:none}
+.sidebar-nav{flex:1;padding:10px 8px}
+.nav-section{margin-bottom:14px}
+.nav-label{font-size:9px;letter-spacing:1.4px;color:var(--milk-500);padding:0 8px;margin-bottom:5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--milk-300);transition:all .18s;margin-bottom:1px;user-select:none}
 .nav-item:hover{background:rgba(255,255,255,.08);color:#f5ead8}
 .nav-item.active{background:var(--milk-700);color:#f5ead8;font-weight:500}
-
-/* Main */
 .main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:var(--warm-white);border-bottom:1px solid var(--border);padding:12px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar{background:var(--warm-white);border-bottom:1px solid var(--border);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar-title{font-family:'Noto Serif TC',serif;font-size:16px;font-weight:700}
-.topbar-date{font-size:11.5px;color:var(--text-muted)}
-
-/* Loading bar */
+.topbar-date{font-size:11px;color:var(--text-muted)}
 .lbar{position:fixed;top:0;left:0;right:0;height:3px;z-index:999;pointer-events:none}
 .lbar-fill{height:100%;background:var(--milk-500);width:0;transition:width .35s ease,opacity .3s;opacity:0}
-
-.content{padding:22px 26px;flex:1}
-
-/* Cards */
+.content{padding:20px 24px;flex:1}
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px}
 .card-title{font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:12px}
 .cg{display:grid;gap:12px}
-.c2{grid-template-columns:1fr 1fr}
-.c3{grid-template-columns:1fr 1fr 1fr}
-.c4{grid-template-columns:repeat(4,1fr)}
-
-/* Metrics */
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c4{grid-template-columns:repeat(4,1fr)}
 .metric{background:var(--milk-50);border:1px solid var(--border-light);border-radius:10px;padding:14px 16px}
 .ml{font-size:11px;color:var(--text-muted);margin-bottom:5px}
 .mv{font-size:22px;font-weight:700;font-family:'Noto Serif TC',serif}
 .ms{font-size:11px;color:var(--text-muted);margin-top:2px}
 .mbadge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:4px;font-weight:500}
-.bs{background:var(--success-bg);color:var(--success)}
-.bw{background:var(--warning-bg);color:var(--warning)}
-.bd{background:var(--danger-bg);color:var(--danger)}
-
-/* Forms */
+.bs{background:var(--success-bg);color:var(--success)}.bw{background:var(--warning-bg);color:var(--warning)}.bd{background:var(--danger-bg);color:var(--danger)}
 input,select,textarea{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:'Noto Sans TC',sans-serif;font-size:13px;color:var(--text-primary);background:var(--warm-white);width:100%;outline:none;transition:border-color .2s}
-input:focus,select:focus{border-color:var(--milk-400)}
-.fr{display:grid;gap:10px;margin-bottom:10px}
-.fr.c2{grid-template-columns:1fr 1fr}
-.fr.c3{grid-template-columns:1fr 1fr 1fr}
+input:focus,select:focus,textarea:focus{border-color:var(--milk-400)}
+.fr{display:grid;gap:10px;margin-bottom:10px}.fr.c2{grid-template-columns:1fr 1fr}.fr.c3{grid-template-columns:1fr 1fr 1fr}
 label{font-size:11px;color:var(--text-secondary);margin-bottom:3px;display:block;font-weight:500}
 .fg{display:flex;flex-direction:column}
-
-/* Buttons */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .15s;border:none;font-weight:500}
-.btn-p{background:var(--milk-700);color:#f5ead8}
-.btn-p:hover{background:var(--milk-800)}
-.btn-p:disabled{background:var(--milk-500);cursor:not-allowed;opacity:.8}
-.btn-s{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}
-.btn-s:hover{background:var(--milk-100)}
-.btn-d{background:var(--danger-bg);color:var(--danger);border:1px solid #e8c0c0}
-.btn-d:hover{background:#f5dada}
+.btn-p{background:var(--milk-700);color:#f5ead8}.btn-p:hover{background:var(--milk-800)}.btn-p:disabled{opacity:.6;cursor:not-allowed}
+.btn-s{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}.btn-s:hover{background:var(--milk-100)}
+.btn-d{background:var(--danger-bg);color:var(--danger);border:1px solid #e8c0c0}.btn-d:hover{background:#f5dada}
 .btn-ok{background:var(--success-bg);color:var(--success);border:1px solid #c0ddc9}
-.btn-sm{padding:5px 10px;font-size:12px}
-
-/* Tables */
+.btn-info{background:var(--info-bg);color:var(--info);border:1px solid #b0c8e8}
+.btn-warn{background:var(--warning-bg);color:var(--warning);border:1px solid #e8d0a0}
+.btn-sm{padding:5px 10px;font-size:12px}.btn-lg{padding:12px 24px;font-size:15px}
 table{width:100%;border-collapse:collapse}
 th{font-size:11px;font-weight:500;color:var(--text-muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--milk-50)}
-td{font-size:13px;padding:10px 12px;border-bottom:1px solid var(--border-light)}
+td{font-size:13px;padding:9px 12px;border-bottom:1px solid var(--border-light)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--milk-50)}
-
-/* Helpers */
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .st{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700}
 .divider{height:1px;background:var(--border-light);margin:14px 0}
 .rf{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.mt8{margin-top:8px}.mt12{margin-top:12px}
-.tsm{font-size:12px}.tmut{color:var(--text-muted)}
-.tok{color:var(--success)}.tdan{color:var(--danger)}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.tsm{font-size:12px}.tmut{color:var(--text-muted)}.tok{color:var(--success)}.tdan{color:var(--danger)}.twarn{color:var(--warning)}
 .tr{text-align:right}.fb{font-weight:700}.fser{font-family:'Noto Serif TC',serif}
-
-/* Alerts */
 .alert{padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px}
 .a-ok{background:var(--success-bg);color:var(--success);border:1px solid #c0ddc9}
 .a-w{background:var(--warning-bg);color:var(--warning);border:1px solid #e8d0a0}
 .a-d{background:var(--danger-bg);color:var(--danger);border:1px solid #e8c0c0}
 .a-i{background:var(--info-bg);color:var(--info);border:1px solid #b0c8e8}
-
-/* Progress */
 .pbar{height:8px;background:var(--border-light);border-radius:4px;overflow:hidden}
-.pfill{height:100%;border-radius:4px;transition:width .4s}
-.pok{background:var(--success)}.pw{background:var(--warning)}.pd{background:var(--danger)}
-
-/* Modal */
+.pfill{height:100%;border-radius:4px;transition:width .6s}.pok{background:var(--success)}.pw{background:var(--warning)}.pd{background:var(--danger)}.pi{background:var(--info)}
 .mov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:var(--card-bg);border-radius:16px;padding:26px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;border:1px solid var(--border)}
+.modal{background:var(--card-bg);border-radius:16px;padding:24px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
 .mtitle{font-family:'Noto Serif TC',serif;font-size:16px;font-weight:700;margin-bottom:16px}
-
-/* Chips */
-.chip-list{display:flex;flex-wrap:wrap;gap:6px;min-height:38px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--warm-white)}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--warm-white)}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 10px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border)}
 .chip-v{background:var(--milk-100);color:var(--milk-800);border-color:var(--milk-300)}
 .chip-a{background:#eef3fa;color:#2a5a8c;border-color:#b5d4f4}
 .chip-b{background:#f3eef8;color:#5a2a8c;border-color:#dbb5f4}
 .chip-del{background:none;border:none;cursor:pointer;color:inherit;opacity:.55;padding:0;font-size:13px;line-height:1}
 .chip-del:hover{opacity:1}
-.ai{display:flex;gap:6px;margin-top:8px}
-.ai input{flex:1}
+.ai{display:flex;gap:6px;margin-top:8px}.ai input{flex:1}
 .ss{background:var(--milk-50);border:1px solid var(--border-light);border-radius:10px;padding:14px;margin-bottom:12px}
 .ss-title{font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-
-/* Tags */
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
 .ta{background:#eef3fa;color:#2a5a8c}.tb{background:#f3eef8;color:#5a2a8c}
-
 .sx{overflow-x:auto}.nw{white-space:nowrap}
-
-/* Spinner */
 .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rot .6s linear infinite;flex-shrink:0}
 @keyframes rot{to{transform:rotate(360deg)}}
-
-/* Toast */
 #toasts{position:fixed;bottom:80px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 @media(min-width:769px){#toasts{bottom:24px;right:24px}}
 .toast{background:var(--milk-800);color:#f5ead8;padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.25);animation:tin .22s ease;max-width:300px}
-.toast.ok{background:#3a6b48}.toast.err{background:#7a2828}
+.toast.ok{background:#3a6b48}.toast.err{background:#7a2828}.toast.warn{background:#8a5a10}
 @keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-
 .ploading{display:flex;align-items:center;justify-content:center;padding:80px;color:var(--text-muted);font-size:13px;gap:10px}
 .pspin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--milk-500);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
 
-/* ══ MOBILE RESPONSIVE ══ */
-/* Bottom nav (mobile only) */
+/* ── LOCK SCREEN ── */
+#lock-screen{position:fixed;inset:0;background:var(--milk-900);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px}
+.lock-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:36px 32px;width:320px;text-align:center}
+.lock-logo{font-family:'Noto Serif TC',serif;font-size:16px;color:#f5ead8;margin-bottom:4px}
+.lock-sub{font-size:11px;color:var(--milk-500);margin-bottom:24px}
+.lock-input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:12px 16px;font-size:18px;color:#f5ead8;text-align:center;letter-spacing:6px;width:100%;font-family:var(--font-mono,'monospace');outline:none}
+.lock-input::placeholder{letter-spacing:2px;font-size:13px;color:var(--milk-600)}
+.lock-input:focus{border-color:var(--milk-400)}
+.lock-btn{margin-top:12px;width:100%;padding:12px;background:var(--milk-600);color:#f5ead8;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:500;transition:background .15s}
+.lock-btn:hover{background:var(--milk-700)}
+.lock-err{color:#f09595;font-size:12px;margin-top:8px;min-height:18px}
+.lock-hint{font-size:11px;color:var(--milk-600);margin-top:8px}
+
+/* ── QUICK INPUT ── */
+.qi-wrap{max-width:440px;margin:0 auto;padding:8px 0}
+.qi-date-row{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.qi-date-row input{flex:1;font-size:16px;padding:10px 14px}
+.qi-field{margin-bottom:16px}
+.qi-label{font-size:12px;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.qi-input{font-size:28px;font-weight:700;font-family:'Noto Serif TC',serif;border:none;border-bottom:2px solid var(--border);border-radius:0;background:transparent;color:var(--text-primary);padding:6px 0;width:100%}
+.qi-input:focus{border-bottom-color:var(--milk-500);outline:none}
+.qi-total{background:var(--milk-100);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.qi-total-label{font-size:12px;color:var(--text-secondary)}
+.qi-total-val{font-size:24px;font-weight:700;font-family:'Noto Serif TC',serif;color:var(--text-primary)}
+.qi-submit{width:100%;padding:16px;font-size:16px;border-radius:14px}
+.holiday-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-left:4px;vertical-align:middle}
+.holiday-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px}
+
+/* ── TARGET PROGRESS ── */
+.target-wrap{position:relative}
+.target-pct{font-size:32px;font-weight:700;font-family:'Noto Serif TC',serif}
+.target-pbar{height:12px;background:var(--border-light);border-radius:6px;overflow:hidden;margin:8px 0}
+.target-pfill{height:100%;border-radius:6px;transition:width .8s ease}
+
+/* ── INVENTORY ── */
+.inv-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);margin-bottom:8px;background:var(--warm-white)}
+.inv-bar-wrap{flex:1;margin:0 12px}
+.inv-bar{height:6px;background:var(--border-light);border-radius:3px;overflow:hidden}
+.inv-fill{height:100%;border-radius:3px;transition:width .4s}
+.inv-qty{font-size:13px;font-weight:500;color:var(--text-primary);white-space:nowrap}
+.inv-alert{background:var(--danger-bg);border:1px solid #e8c0c0;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--danger);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+
+/* ── CHART ── */
+.chart-wrap{position:relative;height:220px}
+
+/* ── MOBILE ── */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--milk-900);z-index:200;padding:0 0 env(safe-area-inset-bottom);border-top:1px solid rgba(255,255,255,.1)}
 .bnav-inner{display:flex;align-items:stretch}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;color:var(--milk-500);font-size:9px;gap:4px;transition:color .18s;border:none;background:none;font-family:'Noto Sans TC',sans-serif;line-height:1.2;min-height:52px}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 2px;cursor:pointer;color:var(--milk-500);font-size:9px;gap:3px;transition:color .18s;border:none;background:none;font-family:'Noto Sans TC',sans-serif;line-height:1.2;min-height:50px}
 .bnav-item.active{color:#f5ead8}
-.bnav-icon{font-size:18px;line-height:1}
-/* Menu drawer overlay */
+.bnav-icon{font-size:17px;line-height:1}
 .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
 .drawer-overlay.open{display:block}
 .drawer{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--milk-900);z-index:160;transform:translateX(-100%);transition:transform .28s ease;overflow-y:auto}
 .drawer.open{transform:translateX(0)}
-
-/* Hamburger in topbar */
 .menu-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary)}
 .menu-btn svg{width:22px;height:22px}
-
 @media(max-width:768px){
-  /* hide desktop sidebar */
-  .sidebar{display:none}
-  .main{margin-left:0;padding-bottom:64px}
-  .topbar{padding:10px 16px}
-  .topbar-date{display:none}
-  .menu-btn{display:flex;align-items:center}
-  .content{padding:14px 14px}
-  /* show bottom nav */
-  .bottom-nav{display:block}
-  /* grid responsive */
-  .c4{grid-template-columns:1fr 1fr}
-  .c3{grid-template-columns:1fr 1fr}
-  .c2{grid-template-columns:1fr}
-  .fr.c2{grid-template-columns:1fr}
-  .fr.c3{grid-template-columns:1fr}
-  /* metric value smaller */
-  .mv{font-size:18px}
-  /* section header stack */
-  .sh{flex-direction:column;align-items:flex-start;gap:10px}
-  /* modal full width */
-  .mov{padding:0;align-items:flex-end}
-  .modal{border-radius:16px 16px 0 0;max-height:92vh;max-width:100%;padding:20px 16px}
-  /* table font */
-  th,td{font-size:12px;padding:7px 8px}
-  /* cards */
-  .card{padding:12px}
-  /* month grid 3 col on mobile */
-  #month-grid{grid-template-columns:repeat(4,1fr)!important}
-  /* chips wrap tight */
-  .chip{font-size:11px;padding:2px 6px 2px 8px}
-  /* settings single col */
-  .cg.c2>.ss-wrap{grid-column:1/-1}
-  /* hide yearly bar labels on mobile */
-  .bar-label{display:none}
-  /* rf wrap tighter */
-  .rf{gap:6px}
+  .sidebar{display:none}.main{margin-left:0;padding-bottom:58px}
+  .topbar{padding:9px 14px}.topbar-date{display:none}.menu-btn{display:flex;align-items:center}
+  .content{padding:12px 14px}.bottom-nav{display:block}
+  .c4{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr}.c2{grid-template-columns:1fr}
+  .fr.c2,.fr.c3{grid-template-columns:1fr}.mv{font-size:18px}
+  .sh{flex-direction:column;align-items:flex-start;gap:8px}
+  .mov{padding:0;align-items:flex-end}.modal{border-radius:16px 16px 0 0;max-height:92vh;max-width:100%;padding:18px 14px}
+  th,td{font-size:12px;padding:7px 8px}.card{padding:12px}
 }
-@media(max-width:400px){
-  .c4{grid-template-columns:1fr 1fr}
-  .mv{font-size:16px}
-  .bottom-nav .bnav-item{font-size:8px}
-}
+@media(max-width:400px){.mv{font-size:16px}.bnav-item{font-size:8px}}
 </style>
 </head>
 <body>
 
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-logo">二鍋頭東山鴨頭</div>
+    <div class="lock-sub">潮州店 · 營運管理系統</div>
+    <input type="password" class="lock-input" id="lock-pw" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doUnlock()">
+    <button class="lock-btn" onclick="doUnlock()">進入系統</button>
+    <div class="lock-err" id="lock-err"></div>
+    <div class="lock-hint">預設密碼可在設定中修改</div>
+  </div>
+</div>
+
 <div class="lbar"><div class="lbar-fill" id="lf"></div></div>
 
-<div class="app">
+<div class="app" id="main-app" style="display:none">
   <div class="sidebar">
     <div class="sidebar-brand">
       <div class="brand-logo">二鍋頭東山鴨頭</div>
       <div class="brand-sub">潮州店 · 營運管理系統</div>
-      <div class="sync-row">
-        <div class="sync-dot" id="sdot"></div>
-        <span id="slabel">連線中...</span>
-      </div>
+      <div class="sync-row"><div class="sync-dot" id="sdot"></div><span id="slabel">連線中...</span></div>
     </div>
     <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-label">快速</div>
+        <div class="nav-item" data-p="quick">⚡ 快速輸入</div>
+      </div>
       <div class="nav-section">
         <div class="nav-label">總覽</div>
         <div class="nav-item" data-p="dashboard">◈ 營運總覽</div>
@@ -242,6 +216,7 @@ tr:hover td{background:var(--milk-50)}
         <div class="nav-label">每日記錄</div>
         <div class="nav-item" data-p="daily">◇ 每日營業額</div>
         <div class="nav-item" data-p="purchase">◆ 進貨記錄</div>
+        <div class="nav-item" data-p="holidays">◻ 公休日管理</div>
       </div>
       <div class="nav-section">
         <div class="nav-label">月度管理</div>
@@ -253,30 +228,31 @@ tr:hover td{background:var(--milk-50)}
         <div class="nav-label">分析報告</div>
         <div class="nav-item" data-p="analysis">◉ 成本分析</div>
         <div class="nav-item" data-p="yearly">◎ 年度報表</div>
+        <div class="nav-item" data-p="chart">📈 趨勢圖表</div>
       </div>
       <div class="nav-section">
-        <div class="nav-label">系統設定</div>
-        <div class="nav-item" data-p="settings">⚙ 廠商與品項設定</div>
+        <div class="nav-label">管理</div>
+        <div class="nav-item" data-p="inventory">📦 庫存管理</div>
+        <div class="nav-item" data-p="settings">⚙ 系統設定</div>
       </div>
     </nav>
   </div>
+
   <div class="main">
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="menu-btn" onclick="openDrawer()" aria-label="開啟選單">
+        <button class="menu-btn" onclick="openDrawer()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div class="topbar-title" id="ttitle">營運總覽</div>
+        <div class="topbar-title" id="ttitle">快速輸入</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
         <div class="topbar-date" id="tdate"></div>
-        <div class="sync-row" style="margin:0">
-          <div class="sync-dot online" id="sdot2"></div>
-        </div>
+        <div class="sync-row" style="margin:0"><div class="sync-dot online" id="sdot2"></div></div>
       </div>
     </div>
     <div class="content" id="content">
-      <div class="ploading"><div class="pspin"></div>連線至 Supabase 雲端...</div>
+      <div class="ploading"><div class="pspin"></div>連線至 Supabase...</div>
     </div>
   </div>
 </div>
@@ -284,250 +260,285 @@ tr:hover td{background:var(--milk-50)}
 <div id="mc"></div>
 <div id="toasts"></div>
 
-<!-- Mobile drawer overlay -->
-<div class="drawer-overlay" id="drawer-ov" onclick="closeDrawer()"></div>
+<!-- Mobile drawer -->
+<div class="drawer-overlay" id="dov" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
-  <div class="sidebar-brand" style="padding:20px 16px 14px">
+  <div class="sidebar-brand" style="padding:18px 14px 12px">
     <div class="brand-logo">二鍋頭東山鴨頭</div>
     <div class="brand-sub">潮州店 · 營運管理系統</div>
-    <div class="sync-row" style="margin-top:6px">
-      <div class="sync-dot" id="sdot3"></div>
-      <span id="slabel2">連線中...</span>
-    </div>
+    <div class="sync-row" style="margin-top:6px"><div class="sync-dot online" id="sdot3"></div><span id="slabel2">連線中...</span></div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">
+      <div class="nav-label">快速</div>
+      <div class="nav-item" data-dp="quick" onclick="navMobile('quick')">⚡ 快速輸入</div>
+    </div>
+    <div class="nav-section">
       <div class="nav-label">總覽</div>
-      <div class="nav-item" data-dp="dashboard" onclick="navigateMobile('dashboard')">◈ 營運總覽</div>
+      <div class="nav-item" data-dp="dashboard" onclick="navMobile('dashboard')">◈ 營運總覽</div>
     </div>
     <div class="nav-section">
       <div class="nav-label">每日記錄</div>
-      <div class="nav-item" data-dp="daily" onclick="navigateMobile('daily')">◇ 每日營業額</div>
-      <div class="nav-item" data-dp="purchase" onclick="navigateMobile('purchase')">◆ 進貨記錄</div>
+      <div class="nav-item" data-dp="daily" onclick="navMobile('daily')">◇ 每日營業額</div>
+      <div class="nav-item" data-dp="purchase" onclick="navMobile('purchase')">◆ 進貨記錄</div>
+      <div class="nav-item" data-dp="holidays" onclick="navMobile('holidays')">◻ 公休日管理</div>
     </div>
     <div class="nav-section">
       <div class="nav-label">月度管理</div>
-      <div class="nav-item" data-dp="monthly" onclick="navigateMobile('monthly')">▽ 月度報表</div>
-      <div class="nav-item" data-dp="staff" onclick="navigateMobile('staff')">▲ 人事薪資</div>
-      <div class="nav-item" data-dp="expense" onclick="navigateMobile('expense')">○ 支出管理</div>
+      <div class="nav-item" data-dp="monthly" onclick="navMobile('monthly')">▽ 月度報表</div>
+      <div class="nav-item" data-dp="staff" onclick="navMobile('staff')">▲ 人事薪資</div>
+      <div class="nav-item" data-dp="expense" onclick="navMobile('expense')">○ 支出管理</div>
     </div>
     <div class="nav-section">
       <div class="nav-label">分析報告</div>
-      <div class="nav-item" data-dp="analysis" onclick="navigateMobile('analysis')">◉ 成本分析</div>
-      <div class="nav-item" data-dp="yearly" onclick="navigateMobile('yearly')">◎ 年度報表</div>
+      <div class="nav-item" data-dp="analysis" onclick="navMobile('analysis')">◉ 成本分析</div>
+      <div class="nav-item" data-dp="yearly" onclick="navMobile('yearly')">◎ 年度報表</div>
+      <div class="nav-item" data-dp="chart" onclick="navMobile('chart')">📈 趨勢圖表</div>
     </div>
     <div class="nav-section">
-      <div class="nav-label">系統設定</div>
-      <div class="nav-item" data-dp="settings" onclick="navigateMobile('settings')">⚙ 廠商與品項設定</div>
+      <div class="nav-label">管理</div>
+      <div class="nav-item" data-dp="inventory" onclick="navMobile('inventory')">📦 庫存管理</div>
+      <div class="nav-item" data-dp="settings" onclick="navMobile('settings')">⚙ 系統設定</div>
     </div>
   </nav>
 </div>
 
-<!-- Bottom navigation (mobile) -->
-<nav class="bottom-nav" id="bottom-nav">
+<!-- Bottom nav -->
+<nav class="bottom-nav">
   <div class="bnav-inner">
-    <button class="bnav-item active" data-bp="dashboard" onclick="navigate('dashboard')">
-      <span class="bnav-icon">◈</span>總覽
-    </button>
-    <button class="bnav-item" data-bp="daily" onclick="navigate('daily')">
-      <span class="bnav-icon">◇</span>營業額
-    </button>
-    <button class="bnav-item" data-bp="purchase" onclick="navigate('purchase')">
-      <span class="bnav-icon">◆</span>進貨
-    </button>
-    <button class="bnav-item" data-bp="monthly" onclick="navigate('monthly')">
-      <span class="bnav-icon">▽</span>月報
-    </button>
-    <button class="bnav-item" data-bp="menu" onclick="openDrawer()">
-      <span class="bnav-icon">☰</span>更多
-    </button>
+    <button class="bnav-item" data-bp="quick" onclick="navigate('quick')"><span class="bnav-icon">⚡</span>快速</button>
+    <button class="bnav-item" data-bp="dashboard" onclick="navigate('dashboard')"><span class="bnav-icon">◈</span>總覽</button>
+    <button class="bnav-item" data-bp="daily" onclick="navigate('daily')"><span class="bnav-icon">◇</span>營業額</button>
+    <button class="bnav-item" data-bp="monthly" onclick="navigate('monthly')"><span class="bnav-icon">▽</span>月報</button>
+    <button class="bnav-item" data-bp="menu" onclick="openDrawer()"><span class="bnav-icon">☰</span>更多</button>
   </div>
 </nav>
 
 <script>
 // ══════════════════════════════════════════════
-//  MOBILE DRAWER
-// ══════════════════════════════════════════════
-function openDrawer(){$('drawer').classList.add('open');$('drawer-ov').classList.add('open');}
-function closeDrawer(){$('drawer').classList.remove('open');$('drawer-ov').classList.remove('open');}
-function navigateMobile(page){closeDrawer();navigate(page);}
-
-// ══════════════════════════════════════════════
-//  SYNC (update all indicators)
-// ══════════════════════════════════════════════
-function sync(s,lbl){
-  ['sdot','sdot2','sdot3'].forEach(id=>{const d=$(id);if(d)d.className='sync-dot '+s;});
-  ['slabel','slabel2'].forEach(id=>{const l=$(id);if(l)l.textContent=lbl;});
-}
+//  SUPABASE
 // ══════════════════════════════════════════════
 const SB_URL = 'https://ghzbanepobjheethmpof.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoemJhbmVwb2JqaGVldGhtcG9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjU2NzQsImV4cCI6MjA5NDMwMTY3NH0.9PRjQmvNr261gYBQBoN9WK0HPnSV2ZvgFbDnT_itbAY';
 const HDR = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
-// ── REST helpers ─────────────────────────────
-async function sbGet(table, params = '') {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}&order=created_at.asc`, { headers: HDR });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function sbPost(table, body) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}`, { method: 'POST', headers: HDR, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function sbDelete(table, id) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, { method: 'DELETE', headers: { ...HDR, Prefer: 'return=minimal' } });
-  if (!r.ok) throw new Error(await r.text());
-}
-async function sbUpsert(table, body) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}`, { method: 'POST', headers: { ...HDR, Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
-}
+async function sbGet(t, p='') { const r=await fetch(`${SB_URL}/rest/v1/${t}?${p}&order=created_at.asc`,{headers:HDR}); if(!r.ok)throw new Error(await r.text()); return r.json(); }
+async function sbPost(t, b) { const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:HDR,body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); }
+async function sbPatch(t, id, b) { const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{...HDR,Prefer:'return=representation'},body:JSON.stringify(b)}); if(!r.ok)throw new Error(await r.text()); return r.json(); }
+async function sbDelete(t, id) { const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:{...HDR,Prefer:'return=minimal'}}); if(!r.ok)throw new Error(await r.text()); }
 
 // ══════════════════════════════════════════════
-//  GLOBALS & CACHE
+//  LOCK SCREEN
+// ══════════════════════════════════════════════
+const DEFAULT_PW = '1234';
+function doUnlock() {
+  const pw = $('lock-pw').value;
+  const stored = localStorage.getItem('erp_pw') || DEFAULT_PW;
+  if (pw === stored) {
+    $('lock-screen').style.display = 'none';
+    $('main-app').style.display = 'flex';
+    sessionStorage.setItem('erp_unlocked','1');
+    bootApp();
+  } else {
+    $('lock-err').textContent = '密碼錯誤，請再試一次';
+    $('lock-pw').value = '';
+    $('lock-pw').focus();
+    setTimeout(()=>$('lock-err').textContent='', 2000);
+  }
+}
+$('lock-pw').addEventListener('keydown', e => { if(e.key==='Enter') doUnlock(); });
+
+// ══════════════════════════════════════════════
+//  GLOBALS
 // ══════════════════════════════════════════════
 const NOW = new Date();
 let selYear = NOW.getFullYear(), selMonth = NOW.getMonth() + 1;
-const C = { daily:[], purchases:[], staff:[], expenses:[], vendors:[], itemsA:[], itemsB:[], loaded:{} };
-
+const C = { daily:[], purchases:[], staff:[], expenses:[], vendors:[], itemsA:[], itemsB:[], inventory:[], holidays:[], targets:[], loaded:{} };
 const DEFAULT_VENDORS = ['泰禾食品','振昌肉品','大成食品','家樂福','全聯','其他'];
 const DEFAULT_ITEMS_A = ['豬肉','鴨頭','鴨頸','鴨翅','鴨腳','豆腐','蔬菜','香料','醬料','油品'];
 const DEFAULT_ITEMS_B = ['包裝袋','紙袋','打包盒','免洗餐具','衛生紙','塑膠袋','標籤貼紙'];
 const EXP_TYPES = ['人事薪資','租金','電信費','台電','水電費','其他'];
+const TITLES = {quick:'⚡ 快速輸入',dashboard:'營運總覽',daily:'每日營業額',purchase:'進貨記錄',holidays:'公休日管理',monthly:'月度報表',staff:'人事薪資',expense:'支出管理',analysis:'成本分析',yearly:'年度報表',chart:'趨勢圖表',inventory:'庫存管理',settings:'系統設定'};
 
 // ══════════════════════════════════════════════
-//  UI HELPERS
+//  HELPERS
 // ══════════════════════════════════════════════
 const $ = id => document.getElementById(id);
-function sync(s, lbl) {
-  ['sdot','sdot2','sdot3'].forEach(id=>{const d=$(id);if(d)d.className='sync-dot '+s;});
-  ['slabel','slabel2'].forEach(id=>{const l=$(id);if(l)l.textContent=lbl;});
-}
-function loading(on) {
-  const f=$('lf'); if(!f) return;
-  if(on){ f.style.opacity='1'; f.style.width='0'; requestAnimationFrame(()=>f.style.width='65%'); }
-  else { f.style.width='100%'; setTimeout(()=>{ f.style.opacity='0'; setTimeout(()=>f.style.width='0',300); },200); }
-}
-function toast(msg, type='') {
-  const c=$('toasts'); if(!c) return;
-  const el=document.createElement('div'); el.className='toast '+type; el.textContent=msg; c.appendChild(el);
-  setTimeout(()=>{ el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateY(8px)'; setTimeout(()=>el.remove(),320); },2600);
-}
-function showModal(html) {
-  $('mc').innerHTML=`<div class="mov" id="mov"><div class="modal">${html}</div></div>`;
-  $('mov').addEventListener('click', e=>{ if(e.target.id==='mov') closeModal(); });
-}
-function closeModal() { $('mc').innerHTML=''; }
+function sync(s,lbl){['sdot','sdot2','sdot3'].forEach(id=>{const d=$(id);if(d)d.className='sync-dot '+s});['slabel','slabel2'].forEach(id=>{const l=$(id);if(l)l.textContent=lbl});}
+function loading(on){const f=$('lf');if(!f)return;if(on){f.style.opacity='1';f.style.width='0';requestAnimationFrame(()=>f.style.width='65%');}else{f.style.width='100%';setTimeout(()=>{f.style.opacity='0';setTimeout(()=>f.style.width='0',300)},200);}}
+function toast(msg,type=''){const c=$('toasts');if(!c)return;const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;c.appendChild(el);setTimeout(()=>{el.style.transition='opacity .3s,transform .3s';el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),320)},2600);}
+function showModal(html){$('mc').innerHTML=`<div class="mov" id="mov"><div class="modal">${html}</div></div>`;$('mov').addEventListener('click',e=>{if(e.target.id==='mov')closeModal();});}
+function closeModal(){$('mc').innerHTML='';}
 const fmt = n => (Math.round(n)||0).toLocaleString();
 const $$ = n => '$'+fmt(n);
-function getYM(d) { const dt=new Date(d); return {y:dt.getFullYear(),m:dt.getMonth()+1}; }
-const dyYM = (y,m) => C.daily.filter(d=>{ const ym=getYM(d.date); return ym.y==y&&ym.m==m; });
-const puYM = (y,m) => C.purchases.filter(d=>{ const ym=getYM(d.date); return ym.y==y&&ym.m==m; });
-const exYM = (y,m) => C.expenses.filter(d=>d.year==y&&d.month==m);
-const stYM = (y,m) => C.staff.filter(s=>s.year==y&&s.month==m);
-function rev(d) {
-  const st=Number(d.store||0), fp=Number(d.foodpanda||0)*.67, ub=Number(d.ubereats||0)*.69;
-  return {store:st,fp,ub,total:st+fp+ub,raw:st+Number(d.foodpanda||0)+Number(d.ubereats||0)};
-}
-const vNames = () => C.vendors.map(v=>v.name);
-const iNamesA = () => C.itemsA.map(v=>v.name);
-const iNamesB = () => C.itemsB.map(v=>v.name);
+function getYM(d){const dt=new Date(d);return{y:dt.getFullYear(),m:dt.getMonth()+1};}
+const dyYM=(y,m)=>C.daily.filter(d=>{const ym=getYM(d.date);return ym.y==y&&ym.m==m;});
+const puYM=(y,m)=>C.purchases.filter(d=>{const ym=getYM(d.date);return ym.y==y&&ym.m==m;});
+const exYM=(y,m)=>C.expenses.filter(d=>d.year==y&&d.month==m);
+const stYM=(y,m)=>C.staff.filter(s=>s.year==y&&s.month==m);
+const holYM=(y,m)=>C.holidays.filter(h=>{const ym=getYM(h.date);return ym.y==y&&ym.m==m;});
+const targetYM=(y,m)=>C.targets.find(t=>t.year==y&&t.month==m);
+function rev(d){const st=Number(d.store||0),fp=Number(d.foodpanda||0)*.67,ub=Number(d.ubereats||0)*.69;return{store:st,fp,ub,total:st+fp+ub,raw:st+Number(d.foodpanda||0)+Number(d.ubereats||0)};}
+const vNames=()=>C.vendors.map(v=>v.name);
+const iNamesA=()=>C.itemsA.map(v=>v.name);
+const iNamesB=()=>C.itemsB.map(v=>v.name);
+function isHoliday(date){return C.holidays.some(h=>h.date===date);}
 
-function ymSel(y,m,fn,id='ym') {
-  const yrs=[]; for(let i=NOW.getFullYear();i>=2023;i--) yrs.push(i);
-  return `<div class="rf">
-    <div class="fg" style="width:90px"><select id="${id}-y" onchange="${fn}">${yrs.map(yr=>`<option value="${yr}"${yr==y?' selected':''}>${yr}年</option>`).join('')}</select></div>
-    <div class="fg" style="width:80px"><select id="${id}-m" onchange="${fn}">${Array.from({length:12},(_,i)=>`<option value="${i+1}"${(i+1)==m?' selected':''}>${i+1}月</option>`).join('')}</select></div>
-  </div>`;
+function ymSel(y,m,fn,id='ym'){
+  const yrs=[];for(let i=NOW.getFullYear();i>=2023;i--)yrs.push(i);
+  return `<div class="rf"><div class="fg" style="width:90px"><select id="${id}-y" onchange="${fn}">${yrs.map(yr=>`<option value="${yr}"${yr==y?' selected':''}>${yr}年</option>`).join('')}</select></div><div class="fg" style="width:80px"><select id="${id}-m" onchange="${fn}">${Array.from({length:12},(_,i)=>`<option value="${i+1}"${(i+1)==m?' selected':''}>${i+1}月</option>`).join('')}</select></div></div>`;
 }
+
+function openDrawer(){$('drawer').classList.add('open');$('dov').classList.add('open');}
+function closeDrawer(){$('drawer').classList.remove('open');$('dov').classList.remove('open');}
+function navMobile(p){closeDrawer();navigate(p);}
 
 // ══════════════════════════════════════════════
 //  DATA LOADING
 // ══════════════════════════════════════════════
-async function loadCol(name, table, params='') {
-  if(C.loaded[name]) return;
-  C[name] = await sbGet(table, params);
-  C.loaded[name] = true;
+async function loadCol(name,table,params=''){if(C.loaded[name])return;C[name]=await sbGet(table,params);C.loaded[name]=true;}
+async function loadSettings(){
+  C.vendors=await sbGet('settings_vendors');C.itemsA=await sbGet('settings_items_a');C.itemsB=await sbGet('settings_items_b');
+  if(!C.vendors.length){for(const n of DEFAULT_VENDORS)await sbPost('settings_vendors',{name:n});C.vendors=await sbGet('settings_vendors');}
+  if(!C.itemsA.length){for(const n of DEFAULT_ITEMS_A)await sbPost('settings_items_a',{name:n});C.itemsA=await sbGet('settings_items_a');}
+  if(!C.itemsB.length){for(const n of DEFAULT_ITEMS_B)await sbPost('settings_items_b',{name:n});C.itemsB=await sbGet('settings_items_b');}
 }
-async function loadSettings() {
-  C.vendors = await sbGet('settings_vendors');
-  C.itemsA  = await sbGet('settings_items_a');
-  C.itemsB  = await sbGet('settings_items_b');
-  // Seed defaults if empty
-  if(!C.vendors.length) { for(const n of DEFAULT_VENDORS) await sbPost('settings_vendors',{name:n}); C.vendors=await sbGet('settings_vendors'); }
-  if(!C.itemsA.length)  { for(const n of DEFAULT_ITEMS_A) await sbPost('settings_items_a',{name:n}); C.itemsA=await sbGet('settings_items_a'); }
-  if(!C.itemsB.length)  { for(const n of DEFAULT_ITEMS_B) await sbPost('settings_items_b',{name:n}); C.itemsB=await sbGet('settings_items_b'); }
+async function ensureCol(col){
+  const map={daily:'daily',purchases:'purchases',staff:'staff',expenses:'expenses',inventory:'inventory',holidays:'holidays',targets:'monthly_targets'};
+  if(!C.loaded[col]&&map[col]){C[col]=await sbGet(map[col]);C.loaded[col]=true;}
 }
 
 // ══════════════════════════════════════════════
 //  ROUTER
 // ══════════════════════════════════════════════
-const TITLES = {dashboard:'營運總覽',daily:'每日營業額',purchase:'進貨記錄',monthly:'月度報表',staff:'人事薪資',expense:'支出管理',analysis:'成本分析',yearly:'年度報表',settings:'廠商與品項設定'};
-const PAGE_COLS = {
-  dashboard:['daily','purchases','staff','expenses'],
-  daily:['daily'], purchase:['purchases'],
-  monthly:['daily','purchases','staff','expenses'],
-  staff:['staff'], expense:['expenses','staff','purchases'],
-  analysis:['daily','purchases','staff','expenses'],
-  yearly:['daily','purchases','staff','expenses'], settings:[]
-};
-const PAGE_COL_MAP = { daily:['daily','daily'], purchases:['purchases','purchases'], staff:['staff','staff'], expenses:['expenses','expenses'] };
+const PAGE_NEEDS={quick:['daily'],dashboard:['daily','purchases','staff','expenses','targets'],daily:['daily','holidays'],purchase:['purchases'],holidays:['holidays'],monthly:['daily','purchases','staff','expenses','targets'],staff:['staff'],expense:['expenses','staff','purchases'],analysis:['daily','purchases','staff','expenses'],yearly:['daily','purchases','staff','expenses'],chart:['daily'],inventory:['inventory'],settings:[]};
 
-async function navigate(page) {
-  // Desktop sidebar
-  document.querySelectorAll('.nav-item[data-p]').forEach(el=>el.classList.toggle('active', el.dataset.p===page));
-  // Mobile drawer
-  document.querySelectorAll('.nav-item[data-dp]').forEach(el=>el.classList.toggle('active', el.dataset.dp===page));
-  // Bottom nav
-  document.querySelectorAll('.bnav-item[data-bp]').forEach(el=>el.classList.toggle('active', el.dataset.bp===page));
-  $('ttitle').textContent = TITLES[page]||page;
-  $('content').innerHTML = '<div class="ploading"><div class="pspin"></div>載入中...</div>';
-  // Scroll to top on mobile
-  window.scrollTo(0,0);
+async function navigate(page){
+  document.querySelectorAll('.nav-item[data-p]').forEach(el=>el.classList.toggle('active',el.dataset.p===page));
+  document.querySelectorAll('.nav-item[data-dp]').forEach(el=>el.classList.toggle('active',el.dataset.dp===page));
+  document.querySelectorAll('.bnav-item[data-bp]').forEach(el=>el.classList.toggle('active',el.dataset.bp===page));
+  $('ttitle').textContent=TITLES[page]||page;
+  $('content').innerHTML='<div class="ploading"><div class="pspin"></div>載入中...</div>';
   loading(true);
-  const needCols = PAGE_COLS[page]||[];
-  for(const col of needCols) {
-    if(!C.loaded[col]) {
-      const tmap = {daily:'daily',purchases:'purchases',staff:'staff',expenses:'expenses'};
-      if(tmap[col]) { C[col]=await sbGet(tmap[col]); C.loaded[col]=true; }
-    }
+  for(const col of PAGE_NEEDS[page]||[])await ensureCol(col);
+  loading(false);window.scrollTo(0,0);
+  ({quick:renderQuick,dashboard:renderDash,daily:renderDaily,purchase:renderPurchase,holidays:renderHolidays,monthly:renderMonthly,staff:renderStaff,expense:renderExpense,analysis:renderAnalysis,yearly:renderYearly,chart:renderChart,inventory:renderInventory,settings:renderSettings})[page]?.();
+}
+
+// ══════════════════════════════════════════════
+//  QUICK INPUT
+// ══════════════════════════════════════════════
+function renderQuick(){
+  const today=new Date().toISOString().split('T')[0];
+  const existing=C.daily.find(d=>d.date===today);
+  $('content').innerHTML=`<div class="qi-wrap">
+    <div class="qi-date-row">
+      <input type="date" id="qi-date" value="${today}" onchange="checkExistingQuick()">
+      ${isHoliday(today)?'<span style="background:var(--danger-bg);color:var(--danger);padding:4px 10px;border-radius:8px;font-size:12px">公休日</span>':''}
+    </div>
+    ${existing?`<div class="alert a-w" style="margin-bottom:16px">此日期已有記錄，儲存將覆蓋舊資料</div>`:''}
+    <div class="qi-field">
+      <div class="qi-label"><span>🏪 門市營業額</span><span class="tmut tsm">元</span></div>
+      <input type="number" class="qi-input" id="qi-store" placeholder="0" min="0" value="${existing?existing.store:''}" oninput="calcQiTotal()">
+    </div>
+    <div class="qi-field">
+      <div class="qi-label"><span>🛵 Foodpanda（原始）</span><span style="color:var(--danger);font-size:11px">扣33% 後實收</span></div>
+      <input type="number" class="qi-input" id="qi-fp" placeholder="0" min="0" value="${existing?existing.foodpanda:''}" oninput="calcQiTotal()">
+    </div>
+    <div class="qi-field">
+      <div class="qi-label"><span>🚗 Uber Eats（原始）</span><span style="color:var(--danger);font-size:11px">扣31% 後實收</span></div>
+      <input type="number" class="qi-input" id="qi-ub" placeholder="0" min="0" value="${existing?existing.ubereats:''}" oninput="calcQiTotal()">
+    </div>
+    <div class="qi-total">
+      <div>
+        <div class="qi-total-label">今日實收合計</div>
+        <div class="qi-total-val" id="qi-total">$0</div>
+      </div>
+      <div style="text-align:right">
+        <div class="qi-total-label">原始合計</div>
+        <div style="font-size:14px;color:var(--text-muted)" id="qi-raw">$0</div>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:16px"><label>備註（可選）</label><input type="text" id="qi-note" placeholder="天氣、活動、特殊事件..." value="${existing?existing.note||'':''}"></div>
+    <button class="btn btn-p btn-lg qi-submit" id="qi-btn" onclick="saveQuick()">💾 儲存今日記錄</button>
+  </div>`;
+  calcQiTotal();
+}
+function calcQiTotal(){
+  const st=Number($('qi-store')?.value||0),fp=Number($('qi-fp')?.value||0),ub=Number($('qi-ub')?.value||0);
+  const adj=st+fp*.67+ub*.69,raw=st+fp+ub;
+  const t=$('qi-total'),r=$('qi-raw');
+  if(t)t.textContent=$$(adj);if(r)r.textContent=$$(raw);
+}
+function checkExistingQuick(){
+  const date=$('qi-date')?.value;const existing=C.daily.find(d=>d.date===date);
+  if(existing){$('qi-store').value=existing.store||'';$('qi-fp').value=existing.foodpanda||'';$('qi-ub').value=existing.ubereats||'';$('qi-note').value=existing.note||'';}
+  else{$('qi-store').value='';$('qi-fp').value='';$('qi-ub').value='';$('qi-note').value='';}
+  calcQiTotal();
+}
+async function saveQuick(){
+  const date=$('qi-date').value;if(!date)return;
+  const btn=$('qi-btn');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中...';}
+  const exists=C.daily.find(d=>d.date===date);
+  if(exists){await sbDelete('daily',exists.id);C.daily=C.daily.filter(d=>d.id!==exists.id);}
+  const data={date,store:Number($('qi-store').value||0),foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),note:$('qi-note').value};
+  const [row]=await sbPost('daily',data);C.daily.push(row);
+  toast('今日記錄已儲存 ✓','ok');
+  // LINE notify
+  const lineToken=localStorage.getItem('erp_line_token');
+  if(lineToken){
+    const r=rev(row);
+    sendLineNotify(lineToken,`🏪 潮州店今日營收\n日期：${date}\n門市：${$$(data.store)}\nFP實收：${$$(data.foodpanda*.67)}\nUE實收：${$$(data.ubereats*.69)}\n━━━━━━━━\n今日實收：${$$(r.total)}`);
   }
-  loading(false);
-  ({dashboard:renderDash,daily:renderDaily,purchase:renderPurchase,monthly:renderMonthly,staff:renderStaff,expense:renderExpense,analysis:renderAnalysis,yearly:renderYearly,settings:renderSettings})[page]?.();
+  if(btn){btn.disabled=false;btn.innerHTML='💾 儲存今日記錄';}
+}
+
+// LINE NOTIFY
+async function sendLineNotify(token,msg){
+  try{
+    await fetch('https://notify-api.line.me/api/notify',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/x-www-form-urlencoded'},body:'message='+encodeURIComponent(msg)});
+  }catch(e){console.warn('LINE notify failed',e);}
 }
 
 // ══════════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════════
-function renderDash() {
+function renderDash(){
   $('content').innerHTML=`<div class="sh"><div class="st">月度概覽</div>${ymSel(selYear,selMonth,'updDash()')}</div><div id="db"></div>`;
   updDash();
 }
-function updDash() {
-  const y=Number($('ym-y')?.value||selYear), m=Number($('ym-m')?.value||selMonth);
-  selYear=y; selMonth=m;
-  const days=dyYM(y,m), purs=puYM(y,m), exps=exYM(y,m), staff=stYM(y,m);
+function updDash(){
+  const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);
+  selYear=y;selMonth=m;
+  const days=dyYM(y,m),purs=puYM(y,m),exps=exYM(y,m),staff=stYM(y,m),hols=holYM(y,m);
   const tRev=days.reduce((s,d)=>s+rev(d).total,0);
   const stR=days.reduce((s,d)=>s+Number(d.store||0),0);
   const fpR=days.reduce((s,d)=>s+Number(d.foodpanda||0)*.67,0);
   const ubR=days.reduce((s,d)=>s+Number(d.ubereats||0)*.69,0);
-  const wD=days.length;
+  const wD=days.length,holD=hols.length;
   const pC=purs.reduce((s,p)=>s+Number(p.amount||0),0);
   const sC=staff.reduce((s,st)=>s+Number(st.salary||0),0);
   const oC=exps.reduce((s,e)=>s+Number(e.amount||0),0);
-  const tExp=pC+sC+oC, profit=tRev-tExp, avg=wD>0?tRev/wD:0;
-  const pR=tRev>0?pC/tRev*100:0, sR=tRev>0?sC/tRev*100:0;
-  let pm=m-1,py=y; if(pm<1){pm=12;py--;}
+  const tExp=pC+sC+oC,profit=tRev-tExp,avg=wD>0?tRev/wD:0;
+  const pR=tRev>0?pC/tRev*100:0,sR=tRev>0?sC/tRev*100:0;
+  let pm=m-1,py=y;if(pm<1){pm=12;py--;}
   const prevR=dyYM(py,pm).reduce((s,d)=>s+rev(d).total,0);
   const gr=prevR>0?((tRev-prevR)/prevR*100).toFixed(1):null;
+  // Target
+  const tgt=targetYM(y,m);
+  const tgtAmt=tgt?Number(tgt.amount):0;
+  const tgtPct=tgtAmt>0?Math.min(tRev/tgtAmt*100,100):0;
   const badge=r=>r<=30?'<span class="mbadge bs">優良</span>':r<=45?'<span class="mbadge bw">尚可</span>':'<span class="mbadge bd">欠佳</span>';
   $('db').innerHTML=`
+    ${tgtAmt>0?`<div class="card" style="margin-bottom:12px"><div class="card-title">🎯 本月目標達成率</div>
+      <div class="target-wrap"><div class="rf" style="justify-content:space-between;margin-bottom:4px"><span class="target-pct ${tgtPct>=100?'tok':tgtPct>=70?'twarn':'tdan'}">${tgtPct.toFixed(1)}%</span><span class="tsm tmut">目標 ${$$(tgtAmt)}</span></div>
+      <div class="target-pbar"><div class="target-pfill ${tgtPct>=100?'pok':tgtPct>=70?'pw':'pd'}" style="width:${tgtPct}%"></div></div>
+      <div class="rf mt8" style="justify-content:space-between"><span class="tsm">已達 ${$$(tRev)}</span><span class="tsm tmut">還差 ${$$(Math.max(tgtAmt-tRev,0))}</span></div>
+      </div></div>`:''}
     <div class="cg c4 mt8">
       <div class="metric"><div class="ml">本月實收總營業額</div><div class="mv">${$$(tRev)}</div>${gr!==null?`<div class="ms">${Number(gr)>=0?'▲':'▼'} ${Math.abs(Number(gr))}% vs 上月</div>`:''}</div>
       <div class="metric"><div class="ml">門市 / FP / UE</div><div class="mv" style="font-size:14px;line-height:2.1">${$$(stR)}<br><span class="tmut tsm">${$$(fpR)} / ${$$(ubR)}</span></div></div>
-      <div class="metric"><div class="ml">平均每日營業額</div><div class="mv">${$$(avg)}</div><div class="ms">共 ${wD} 個工作日</div></div>
+      <div class="metric"><div class="ml">平均每日營業額</div><div class="mv">${$$(avg)}</div><div class="ms">工作 ${wD} 天 / 公休 ${holD} 天</div></div>
       <div class="metric"><div class="ml">本月損益</div><div class="mv fser ${profit>=0?'tok':'tdan'}">${profit>=0?'+':''}${$$(profit)}</div></div>
     </div>
     <div class="cg c3 mt12">
@@ -545,7 +556,7 @@ function updDash() {
         <div class="pbar"><div class="pfill ${sR<=30?'pok':sR<=45?'pw':'pd'}" style="width:${Math.min(sR,100)}%"></div></div>
       </div>
       <div class="card"><div class="card-title">📋 近期日報</div>
-        ${days.length===0?'<div class="tmut tsm">尚無記錄</div>':[...days].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(d=>{const r=rev(d);return`<div class="rf" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-light)"><span class="tsm">${d.date}</span><span class="tsm fb">${$$(r.total)}</span></div>`;}).join('')}
+        ${days.length===0?'<div class="tmut tsm">尚無記錄</div>':[...days].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(d=>{const r=rev(d);const hol=isHoliday(d.date);return`<div class="rf" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-light)"><span class="tsm">${d.date}${hol?'<span class="holiday-dot"></span>':''}</span><span class="tsm fb">${$$(r.total)}</span></div>`;}).join('')}
       </div>
     </div>
     <div class="card mt12"><div class="card-title">📅 月份速查（${y}年）</div>
@@ -558,137 +569,160 @@ function updDash() {
 // ══════════════════════════════════════════════
 //  DAILY
 // ══════════════════════════════════════════════
-function renderDaily() {
+function renderDaily(){
   $('content').innerHTML=`<div class="sh"><div class="st">每日營業額記錄</div><div class="rf">${ymSel(selYear,selMonth,'filtDaily()')}<button class="btn btn-p btn-sm" onclick="showDailyModal()">＋ 新增</button></div></div><div id="ds"></div><div class="card mt12"><div class="card-title">日報清單</div><div class="sx"><table id="dt"></table></div></div>`;
   filtDaily();
 }
-function filtDaily() {
-  const y=Number($('ym-y')?.value||selYear), m=Number($('ym-m')?.value||selMonth);
-  selYear=y; selMonth=m;
+function filtDaily(){
+  const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const days=[...dyYM(y,m)].sort((a,b)=>a.date.localeCompare(b.date));
-  const tS=days.reduce((s,d)=>s+Number(d.store||0),0), tFP=days.reduce((s,d)=>s+Number(d.foodpanda||0),0), tUB=days.reduce((s,d)=>s+Number(d.ubereats||0),0), tAdj=days.reduce((s,d)=>s+rev(d).total,0);
-  $('ds').innerHTML=`<div class="cg c4"><div class="metric"><div class="ml">門市</div><div class="mv">${$$(tS)}</div></div><div class="metric"><div class="ml">Foodpanda（原始）</div><div class="mv">${$$(tFP)}</div><div class="ms">扣33% → ${$$(tFP*.67)}</div></div><div class="metric"><div class="ml">Uber Eats（原始）</div><div class="mv">${$$(tUB)}</div><div class="ms">扣31% → ${$$(tUB*.69)}</div></div><div class="metric"><div class="ml">本月實收合計</div><div class="mv fser">${$$(tAdj)}</div></div></div>`;
-  $('dt').innerHTML=`<thead><tr><th>日期</th><th>門市</th><th>Foodpanda</th><th>Uber Eats</th><th>原始合計</th><th>實收合計</th><th>備註</th><th></th></tr></thead><tbody>${days.map(d=>{const r=rev(d);return`<tr><td class="nw">${d.date}</td><td>${$$(d.store||0)}</td><td>${$$(d.foodpanda||0)}</td><td>${$$(d.ubereats||0)}</td><td>${$$(r.raw)}</td><td class="fb">${$$(r.total)}</td><td class="tmut tsm">${d.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delDaily('${d.id}')">刪除</button></td></tr>`;}).join('')}${days.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">尚無記錄</td></tr>':''}</tbody>`;
+  const tS=days.reduce((s,d)=>s+Number(d.store||0),0),tFP=days.reduce((s,d)=>s+Number(d.foodpanda||0),0),tUB=days.reduce((s,d)=>s+Number(d.ubereats||0),0),tAdj=days.reduce((s,d)=>s+rev(d).total,0);
+  const ds=$('ds');if(ds)ds.innerHTML=`<div class="cg c4"><div class="metric"><div class="ml">門市</div><div class="mv">${$$(tS)}</div></div><div class="metric"><div class="ml">Foodpanda（原始）</div><div class="mv">${$$(tFP)}</div><div class="ms">扣33%→${$$(tFP*.67)}</div></div><div class="metric"><div class="ml">Uber Eats（原始）</div><div class="mv">${$$(tUB)}</div><div class="ms">扣31%→${$$(tUB*.69)}</div></div><div class="metric"><div class="ml">本月實收合計</div><div class="mv fser">${$$(tAdj)}</div></div></div>`;
+  const tbl=$('dt');if(tbl)tbl.innerHTML=`<thead><tr><th>日期</th><th>門市</th><th>Foodpanda</th><th>Uber Eats</th><th>原始</th><th>實收</th><th>備註</th><th></th></tr></thead><tbody>${days.map(d=>{const r=rev(d);const hol=isHoliday(d.date);return`<tr style="${hol?'background:var(--danger-bg)':''}"><td class="nw">${d.date}${hol?'<span class="holiday-dot"></span>':''}</td><td>${$$(d.store||0)}</td><td>${$$(d.foodpanda||0)}</td><td>${$$(d.ubereats||0)}</td><td>${$$(r.raw)}</td><td class="fb">${$$(r.total)}</td><td class="tmut tsm">${d.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delDaily('${d.id}')">刪除</button></td></tr>`;}).join('')}${days.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">尚無記錄</td></tr>':''}</tbody>`;
 }
-function showDailyModal() {
+function showDailyModal(){
   const today=new Date().toISOString().split('T')[0];
   showModal(`<div class="mtitle">新增每日營業額</div>
-    <div class="fr c2"><div class="fg"><label>日期</label><input type="date" id="d-d" value="${today}"></div><div class="fg"><label>門市營業額</label><input type="number" id="d-s" placeholder="0" min="0"></div></div>
+    <div class="fr c2"><div class="fg"><label>日期</label><input type="date" id="d-d" value="${today}"></div><div class="fg"><label>門市</label><input type="number" id="d-s" placeholder="0" min="0"></div></div>
     <div class="fr c2"><div class="fg"><label>Foodpanda（原始）</label><input type="number" id="d-f" placeholder="0" min="0"></div><div class="fg"><label>Uber Eats（原始）</label><input type="number" id="d-u" placeholder="0" min="0"></div></div>
     <div class="fg mt8"><label>備註</label><input type="text" id="d-n" placeholder="可選"></div>
     <div class="divider"></div>
-    <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsd" onclick="saveDaily()">儲存至雲端</button></div>`);
+    <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsd" onclick="saveDaily()">儲存</button></div>`);
 }
-async function saveDaily() {
-  const date=$('d-d').value; if(!date) return alert('請選擇日期');
-  const btn=$('bsd'); if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中';}
+async function saveDaily(){
+  const date=$('d-d').value;if(!date)return alert('請選擇日期');
+  const btn=$('bsd');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中';}
   const exists=C.daily.find(d=>d.date===date);
-  if(exists){ if(!confirm('此日期已有記錄，確定覆蓋？')){if(btn){btn.disabled=false;btn.textContent='儲存至雲端';}return;} await sbDelete('daily',exists.id); C.daily=C.daily.filter(d=>d.id!==exists.id); }
+  if(exists){if(!confirm('此日期已有記錄，確定覆蓋？')){if(btn){btn.disabled=false;btn.textContent='儲存';}return;}await sbDelete('daily',exists.id);C.daily=C.daily.filter(d=>d.id!==exists.id);}
   const data={date,store:Number($('d-s').value||0),foodpanda:Number($('d-f').value||0),ubereats:Number($('d-u').value||0),note:$('d-n').value};
-  const [row]=await sbPost('daily',data); C.daily.push(row);
-  toast('每日記錄已儲存','ok'); closeModal(); filtDaily();
+  const [row]=await sbPost('daily',data);C.daily.push(row);
+  toast('已儲存','ok');closeModal();filtDaily();
 }
-async function delDaily(id) {
-  if(!confirm('確定刪除？')) return;
-  await sbDelete('daily',id); C.daily=C.daily.filter(d=>d.id!==id);
-  toast('已刪除'); filtDaily();
+async function delDaily(id){if(!confirm('確定刪除？'))return;await sbDelete('daily',id);C.daily=C.daily.filter(d=>d.id!==id);toast('已刪除');filtDaily();}
+
+// ══════════════════════════════════════════════
+//  HOLIDAYS
+// ══════════════════════════════════════════════
+function renderHolidays(){
+  $('content').innerHTML=`<div class="sh"><div class="st">公休日管理</div>${ymSel(selYear,selMonth,'rendHols()')}</div><div id="hb"></div>`;
+  rendHols();
 }
+function rendHols(){
+  const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
+  const hols=[...holYM(y,m)].sort((a,b)=>a.date.localeCompare(b.date));
+  $('hb').innerHTML=`<div class="card">
+    <div class="card-title">新增公休日</div>
+    <div class="fr c2"><div class="fg"><label>日期</label><input type="date" id="h-date" value="${y}-${String(m).padStart(2,'0')}-01"></div>
+    <div class="fg"><label>說明</label><input type="text" id="h-note" placeholder="例：週休、國定假日"></div></div>
+    <button class="btn btn-p btn-sm" onclick="addHoliday()">＋ 新增公休日</button>
+    <div class="divider"></div>
+    <div class="card-title">${y}年${m}月 公休日（共 ${hols.length} 天）</div>
+    ${hols.length===0?'<div class="tmut tsm">尚無公休日記錄</div>':hols.map(h=>`<div class="holiday-row"><span style="background:var(--danger-bg);color:var(--danger);padding:2px 8px;border-radius:6px;font-size:12px">${h.date}</span><span class="tsm">${h.note||'公休'}</span><button class="btn btn-d btn-sm" style="margin-left:auto" onclick="delHoliday('${h.id}')">移除</button></div>`).join('')}
+  </div>
+  <div class="alert a-i mt12">公休日標記後，在日報清單中會顯示紅點，平均日營業額計算可自動排除公休日</div>`;
+}
+async function addHoliday(){
+  const date=$('h-date').value,note=$('h-note').value;
+  if(!date)return alert('請選擇日期');
+  if(C.holidays.some(h=>h.date===date))return alert('此日期已標記為公休日');
+  const[row]=await sbPost('holidays',{date,note});C.holidays.push(row);
+  toast('公休日已新增','ok');rendHols();
+}
+async function delHoliday(id){if(!confirm('確定移除此公休日？'))return;await sbDelete('holidays',id);C.holidays=C.holidays.filter(h=>h.id!==id);toast('已移除');rendHols();}
 
 // ══════════════════════════════════════════════
 //  PURCHASE
 // ══════════════════════════════════════════════
-function renderPurchase() {
-  $('content').innerHTML=`<div class="sh"><div class="st">進貨記錄</div><div class="rf">${ymSel(selYear,selMonth,'filtPur()')}<button class="btn btn-s btn-sm" onclick="navigate('settings')">⚙ 廠商/品項設定</button><button class="btn btn-p btn-sm" onclick="showPurModal()">＋ 新增進貨</button></div></div><div id="ps"></div><div class="card mt12"><div class="card-title">進貨明細</div><div class="sx"><table id="pt"></table></div></div><div class="card mt12" id="vc"></div>`;
+function renderPurchase(){
+  $('content').innerHTML=`<div class="sh"><div class="st">進貨記錄</div><div class="rf">${ymSel(selYear,selMonth,'filtPur()')}<button class="btn btn-s btn-sm" onclick="navigate('settings')">⚙ 設定</button><button class="btn btn-p btn-sm" onclick="showPurModal()">＋ 新增</button></div></div><div id="ps"></div><div class="card mt12"><div class="card-title">進貨明細</div><div class="sx"><table id="pt"></table></div></div><div class="card mt12" id="vc"></div>`;
   filtPur();
 }
-function filtPur() {
-  const y=Number($('ym-y')?.value||selYear), m=Number($('ym-m')?.value||selMonth);
-  selYear=y; selMonth=m;
+function filtPur(){
+  const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const items=[...puYM(y,m)].sort((a,b)=>a.date.localeCompare(b.date));
-  const aI=items.filter(i=>i.category==='A'), bI=items.filter(i=>i.category==='B');
-  const tA=aI.reduce((s,i)=>s+Number(i.amount||0),0), tB=bI.reduce((s,i)=>s+Number(i.amount||0),0), tot=tA+tB;
-  $('ps').innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">A 食材合計</div><div class="mv">${$$(tA)}</div></div><div class="metric"><div class="ml">B 耗材合計</div><div class="mv">${$$(tB)}</div></div><div class="metric"><div class="ml">進貨總計 A+B</div><div class="mv fser">${$$(tot)}</div></div></div>`;
-  $('pt').innerHTML=`<thead><tr><th>日期</th><th>類別</th><th>廠商</th><th>品項</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>${items.map(i=>`<tr><td class="nw">${i.date}</td><td><span class="tag ${i.category==='A'?'ta':'tb'}">${i.category==='A'?'A 食材':'B 耗材'}</span></td><td>${i.vendor||'—'}</td><td>${i.item}</td><td class="fb">${$$(i.amount)}</td><td class="tmut tsm">${i.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delPur('${i.id}')">刪除</button></td></tr>`).join('')}${items.length===0?'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">尚無進貨記錄</td></tr>':''}</tbody>`;
-  const vcEl=$('vc');
-  if(vcEl){
+  const aI=items.filter(i=>i.category==='A'),bI=items.filter(i=>i.category==='B');
+  const tA=aI.reduce((s,i)=>s+Number(i.amount||0),0),tB=bI.reduce((s,i)=>s+Number(i.amount||0),0),tot=tA+tB;
+  const ps=$('ps');if(ps)ps.innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">A 食材</div><div class="mv">${$$(tA)}</div></div><div class="metric"><div class="ml">B 耗材</div><div class="mv">${$$(tB)}</div></div><div class="metric"><div class="ml">A+B 總計</div><div class="mv fser">${$$(tot)}</div></div></div>`;
+  const tbl=$('pt');if(tbl)tbl.innerHTML=`<thead><tr><th>日期</th><th>類別</th><th>廠商</th><th>品項</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>${items.map(i=>`<tr><td class="nw">${i.date}</td><td><span class="tag ${i.category==='A'?'ta':'tb'}">${i.category==='A'?'A 食材':'B 耗材'}</span></td><td>${i.vendor||'—'}</td><td>${i.item}</td><td class="fb">${$$(i.amount)}</td><td class="tmut tsm">${i.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delPur('${i.id}')">刪除</button></td></tr>`).join('')}${items.length===0?'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">尚無進貨記錄</td></tr>':''}</tbody>`;
+  const vc=$('vc');if(vc){
     const vA={},vB={};
     aI.forEach(i=>{const k=i.vendor||'未填廠商';vA[k]=(vA[k]||0)+Number(i.amount||0);});
     bI.forEach(i=>{const k=i.vendor||'未填廠商';vB[k]=(vB[k]||0)+Number(i.amount||0);});
     const rv=(obj,tot,col)=>Object.keys(obj).length===0?'<div class="tmut tsm">無資料</div>':Object.entries(obj).map(([v,a])=>`<div class="rf" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-light)"><span class="tsm">${v}</span><span class="tsm fb">${$$(a)}</span></div>`).join('')+`<div class="rf" style="justify-content:space-between;padding:6px 0;color:${col}"><span class="tsm fb">小計</span><span class="tsm fb">${$$(tot)}</span></div>`;
-    vcEl.innerHTML=`<div class="card-title">廠商統計</div><div class="cg c2"><div><div class="tsm fb" style="color:var(--info);margin-bottom:8px">A 食材廠商</div>${rv(vA,tA,'var(--info)')}</div><div><div class="tsm fb" style="color:#5a2a8c;margin-bottom:8px">B 耗材廠商</div>${rv(vB,tB,'#5a2a8c')}</div></div><div class="divider"></div><div class="rf" style="justify-content:flex-end"><span style="font-size:14px;font-weight:700">A+B 總計：${$$(tot)}</span></div>`;
+    vc.innerHTML=`<div class="card-title">廠商統計</div><div class="cg c2"><div><div class="tsm fb" style="color:var(--info);margin-bottom:8px">A 食材廠商</div>${rv(vA,tA,'var(--info)')}</div><div><div class="tsm fb" style="color:#5a2a8c;margin-bottom:8px">B 耗材廠商</div>${rv(vB,tB,'#5a2a8c')}</div></div><div class="divider"></div><div class="rf" style="justify-content:flex-end"><span style="font-size:14px;font-weight:700">A+B 總計：${$$(tot)}</span></div>`;
   }
 }
-function showPurModal() {
+function showPurModal(){
   const today=new Date().toISOString().split('T')[0];
   const vOpts=vNames().map(v=>`<option value="${v}">${v}</option>`).join('');
   const iOptsA=iNamesA().map(i=>`<option value="${i}">${i}</option>`).join('');
   showModal(`<div class="mtitle">新增進貨記錄</div>
     <div class="fr c2"><div class="fg"><label>日期</label><input type="date" id="p-d" value="${today}"></div><div class="fg"><label>類別</label><select id="p-c" onchange="updPurItems()"><option value="A">A 食材</option><option value="B">B 耗材</option></select></div></div>
     <div class="fr c2">
-      <div class="fg"><label>廠商名稱</label><select id="p-v"><option value="">-- 請選擇廠商 --</option>${vOpts}<option value="__c__">＋ 自行輸入廠商</option></select></div>
-      <div class="fg"><label>進貨品項</label><select id="p-i" onchange="togPurItem()">${iOptsA}<option value="__c__">＋ 自行輸入品項</option></select></div>
+      <div class="fg"><label>廠商</label><select id="p-v"><option value="">-- 選擇廠商 --</option>${vOpts}<option value="__c__">＋ 自行輸入</option></select></div>
+      <div class="fg"><label>品項</label><select id="p-i" onchange="togPurItem()">${iOptsA}<option value="__c__">＋ 自行輸入</option></select></div>
     </div>
-    <div id="pvc" style="display:none" class="fg mt8"><label>自訂廠商名稱</label><div class="rf"><input type="text" id="p-vt" placeholder="廠商名稱" style="flex:1"><button class="btn btn-ok btn-sm" onclick="saveVInline()">儲存至名單</button></div></div>
-    <div id="pic" style="display:none" class="fg mt8"><label>自訂品項名稱</label><div class="rf"><input type="text" id="p-it" placeholder="品項名稱" style="flex:1"><button class="btn btn-ok btn-sm" onclick="saveIInline()">儲存至名單</button></div></div>
+    <div id="pvc" style="display:none" class="fg mt8"><label>自訂廠商</label><div class="rf"><input type="text" id="p-vt" placeholder="廠商名稱" style="flex:1"><button class="btn btn-ok btn-sm" onclick="saveVInline()">儲存</button></div></div>
+    <div id="pic" style="display:none" class="fg mt8"><label>自訂品項</label><div class="rf"><input type="text" id="p-it" placeholder="品項名稱" style="flex:1"><button class="btn btn-ok btn-sm" onclick="saveIInline()">儲存</button></div></div>
     <div class="fr c2 mt8"><div class="fg"><label>金額</label><input type="number" id="p-a" placeholder="0" min="0"></div><div class="fg"><label>備註</label><input type="text" id="p-n" placeholder="可選"></div></div>
     <div class="divider"></div>
-    <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsp" onclick="savePur()">儲存至雲端</button></div>`);
+    <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsp" onclick="savePur()">儲存</button></div>`);
   $('p-v').addEventListener('change',function(){$('pvc').style.display=this.value==='__c__'?'flex':'none';});
 }
-function updPurItems(){const cat=$('p-c')?.value,items=cat==='A'?iNamesA():iNamesB(),sel=$('p-i');if(sel){sel.innerHTML=items.map(i=>`<option value="${i}">${i}</option>`).join('')+'<option value="__c__">＋ 自行輸入品項</option>';togPurItem();}}
+function updPurItems(){const cat=$('p-c')?.value,items=cat==='A'?iNamesA():iNamesB(),sel=$('p-i');if(sel){sel.innerHTML=items.map(i=>`<option value="${i}">${i}</option>`).join('')+'<option value="__c__">＋ 自行輸入</option>';togPurItem();}}
 function togPurItem(){const sel=$('p-i'),row=$('pic');if(row)row.style.display=sel?.value==='__c__'?'flex':'none';}
-async function saveVInline(){const val=$('p-vt')?.value?.trim();if(!val)return alert('請輸入廠商名稱');if(vNames().includes(val))return alert('廠商已存在');const[row]=await sbPost('settings_vendors',{name:val});C.vendors.push(row);const sel=$('p-v');const opt=new Option(val,val);sel.insertBefore(opt,sel.lastElementChild);sel.value=val;$('pvc').style.display='none';toast('廠商已新增','ok');}
-async function saveIInline(){const cat=$('p-c')?.value,val=$('p-it')?.value?.trim();if(!val)return alert('請輸入品項名稱');const arr=cat==='A'?C.itemsA:C.itemsB,tbl=cat==='A'?'settings_items_a':'settings_items_b';if(arr.map(v=>v.name).includes(val))return alert('品項已存在');const[row]=await sbPost(tbl,{name:val});arr.push(row);const sel=$('p-i');const opt=new Option(val,val);sel.insertBefore(opt,sel.lastElementChild);sel.value=val;$('pic').style.display='none';toast('品項已新增','ok');}
+async function saveVInline(){const val=$('p-vt')?.value?.trim();if(!val)return;if(vNames().includes(val))return alert('已存在');const[row]=await sbPost('settings_vendors',{name:val});C.vendors.push(row);const sel=$('p-v');const opt=new Option(val,val);sel.insertBefore(opt,sel.lastElementChild);sel.value=val;$('pvc').style.display='none';toast('廠商已新增','ok');}
+async function saveIInline(){const cat=$('p-c')?.value,val=$('p-it')?.value?.trim();if(!val)return;const arr=cat==='A'?C.itemsA:C.itemsB,tbl=cat==='A'?'settings_items_a':'settings_items_b';if(arr.map(v=>v.name).includes(val))return alert('已存在');const[row]=await sbPost(tbl,{name:val});arr.push(row);const sel=$('p-i');const opt=new Option(val,val);sel.insertBefore(opt,sel.lastElementChild);sel.value=val;$('pic').style.display='none';toast('品項已新增','ok');}
 async function savePur(){
-  const date=$('p-d').value; if(!date)return alert('請填寫日期');
-  const amount=$('p-a').value; if(!amount)return alert('請填寫金額');
-  const cat=$('p-c').value, vSel=$('p-v').value, vendor=vSel==='__c__'?($('p-vt')?.value||'其他'):vSel, iSel=$('p-i').value, item=iSel==='__c__'?($('p-it')?.value||'其他'):iSel;
-  const btn=$('bsp'); if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中';}
+  const date=$('p-d').value;if(!date)return alert('請填寫日期');const amount=$('p-a').value;if(!amount)return alert('請填寫金額');
+  const cat=$('p-c').value,vSel=$('p-v').value,vendor=vSel==='__c__'?($('p-vt')?.value||'其他'):vSel;
+  const iSel=$('p-i').value,item=iSel==='__c__'?($('p-it')?.value||'其他'):iSel;
+  const btn=$('bsp');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   const[row]=await sbPost('purchases',{date,category:cat,vendor,item,amount:Number(amount),note:$('p-n').value});
-  C.purchases.push(row); toast('進貨記錄已儲存','ok'); closeModal(); filtPur();
+  C.purchases.push(row);toast('進貨記錄已儲存','ok');closeModal();filtPur();
 }
 async function delPur(id){if(!confirm('確定刪除？'))return;await sbDelete('purchases',id);C.purchases=C.purchases.filter(p=>p.id!==id);toast('已刪除');filtPur();}
 
 // ══════════════════════════════════════════════
 //  STAFF
 // ══════════════════════════════════════════════
-function renderStaff(){$('content').innerHTML=`<div class="sh"><div class="st">人事薪資管理</div><div class="rf">${ymSel(selYear,selMonth,'rendStaffList()')}<button class="btn btn-p btn-sm" onclick="showStaffModal()">＋ 新增員工</button></div></div><div id="sb2"></div>`;rendStaffList();}
-function rendStaffList(){
+function renderStaff(){$('content').innerHTML=`<div class="sh"><div class="st">人事薪資管理</div><div class="rf">${ymSel(selYear,selMonth,'rendStaff()')}<button class="btn btn-p btn-sm" onclick="showStaffModal()">＋ 新增</button></div></div><div id="sb2"></div>`;rendStaff();}
+function rendStaff(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const list=stYM(y,m),total=list.reduce((s,st)=>s+Number(st.salary||0),0);
   const div=$('sb2');if(!div)return;
-  div.innerHTML=`<div class="metric mt8" style="max-width:240px"><div class="ml">本月薪資總額</div><div class="mv fser">${$$(total)}</div></div><div class="card mt12"><div class="card-title">員工清單</div><table><thead><tr><th>姓名</th><th>時薪</th><th>時數</th><th>應發薪資</th><th>備註</th><th></th></tr></thead><tbody>${list.map(st=>`<tr><td>${st.name}</td><td>$${fmt(st.hourly)}/hr</td><td>${st.hours} hr</td><td class="fb">${$$(st.salary)}</td><td class="tmut tsm">${st.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delStaff('${st.id}')">刪除</button></td></tr>`).join('')}${list.length===0?'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">尚無人事記錄</td></tr>':''}</tbody></table></div>`;
+  div.innerHTML=`<div class="metric mt8" style="max-width:240px"><div class="ml">本月薪資總額</div><div class="mv fser">${$$(total)}</div></div><div class="card mt12"><div class="card-title">員工清單</div><table><thead><tr><th>姓名</th><th>時薪</th><th>時數</th><th>應發薪資</th><th>備註</th><th></th></tr></thead><tbody>${list.map(st=>`<tr><td>${st.name}</td><td>$${fmt(st.hourly)}/hr</td><td>${st.hours}hr</td><td class="fb">${$$(st.salary)}</td><td class="tmut tsm">${st.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delStaff('${st.id}')">刪除</button></td></tr>`).join('')}${list.length===0?'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">尚無記錄</td></tr>':''}</tbody></table></div>`;
 }
-function showStaffModal(){showModal(`<div class="mtitle">新增員工薪資</div><div class="fr c2"><div class="fg"><label>員工姓名</label><input type="text" id="s-n" placeholder="姓名"></div><div class="fg"><label>時薪（元）</label><input type="number" id="s-h" placeholder="0" min="0" oninput="prevSal()"></div></div><div class="fr c2"><div class="fg"><label>本月工時（小時）</label><input type="number" id="s-hr" placeholder="0" min="0" oninput="prevSal()"></div><div class="fg"><label>備註</label><input type="text" id="s-no" placeholder="可選"></div></div><div id="spv" class="alert a-i mt8" style="display:none"></div><div class="divider"></div><div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bss" onclick="saveStaff()">儲存至雲端</button></div>`);}
+function showStaffModal(){showModal(`<div class="mtitle">新增員工薪資</div><div class="fr c2"><div class="fg"><label>員工姓名</label><input type="text" id="s-n" placeholder="姓名"></div><div class="fg"><label>時薪（元）</label><input type="number" id="s-h" placeholder="0" min="0" oninput="prevSal()"></div></div><div class="fr c2"><div class="fg"><label>本月工時（小時）</label><input type="number" id="s-hr" placeholder="0" min="0" oninput="prevSal()"></div><div class="fg"><label>備註</label><input type="text" id="s-no" placeholder="可選"></div></div><div id="spv" class="alert a-i mt8" style="display:none"></div><div class="divider"></div><div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bss" onclick="saveStaff()">儲存</button></div>`);}
 function prevSal(){const h=Number($('s-h')?.value||0),hr=Number($('s-hr')?.value||0),p=$('spv');if(p&&h&&hr){p.style.display='flex';p.textContent=`預計薪資：${$$(h*hr)}`;}}
 async function saveStaff(){
-  const name=$('s-n').value;if(!name)return alert('請填寫員工姓名');
+  const name=$('s-n').value;if(!name)return alert('請填寫姓名');
   const hourly=Number($('s-h').value||0),hours=Number($('s-hr').value||0);
-  const btn=$('bss');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中';}
+  const btn=$('bss');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   const[row]=await sbPost('staff',{year:selYear,month:selMonth,name,hourly,hours,salary:hourly*hours,note:$('s-no').value});
-  C.staff.push(row);toast('員工薪資已儲存','ok');closeModal();rendStaffList();
+  C.staff.push(row);toast('已儲存','ok');closeModal();rendStaff();
 }
-async function delStaff(id){if(!confirm('確定刪除？'))return;await sbDelete('staff',id);C.staff=C.staff.filter(s=>s.id!==id);toast('已刪除');rendStaffList();}
+async function delStaff(id){if(!confirm('確定刪除？'))return;await sbDelete('staff',id);C.staff=C.staff.filter(s=>s.id!==id);toast('已刪除');rendStaff();}
 
 // ══════════════════════════════════════════════
 //  EXPENSE
 // ══════════════════════════════════════════════
-function renderExpense(){$('content').innerHTML=`<div class="sh"><div class="st">支出管理</div><div class="rf">${ymSel(selYear,selMonth,'rendExpList()')}<button class="btn btn-p btn-sm" onclick="showExpModal()">＋ 新增支出</button></div></div><div id="eb"></div>`;rendExpList();}
-function rendExpList(){
+function renderExpense(){$('content').innerHTML=`<div class="sh"><div class="st">支出管理</div><div class="rf">${ymSel(selYear,selMonth,'rendExp()')}<button class="btn btn-p btn-sm" onclick="showExpModal()">＋ 新增</button></div></div><div id="eb"></div>`;rendExp();}
+function rendExp(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const list=exYM(y,m),oT=list.reduce((s,e)=>s+Number(e.amount||0),0),sT=stYM(y,m).reduce((s,st)=>s+Number(st.salary||0),0),pT=puYM(y,m).reduce((s,p)=>s+Number(p.amount||0),0),grand=oT+sT+pT;
-  $('eb').innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">固定支出</div><div class="mv">${$$(oT)}</div></div><div class="metric"><div class="ml">人事薪資（自動帶入）</div><div class="mv">${$$(sT)}</div></div><div class="metric"><div class="ml">進貨成本（自動帶入）</div><div class="mv">${$$(pT)}</div></div></div><div class="metric mt12" style="max-width:240px"><div class="ml">當月支出總計</div><div class="mv fser">${$$(grand)}</div></div><div class="card mt12"><div class="card-title">固定支出清單（${y}年${m}月）</div><table><thead><tr><th>類型</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>${list.map(e=>`<tr><td>${e.type}</td><td class="fb">${$$(e.amount)}</td><td class="tmut tsm">${e.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delExp('${e.id}')">刪除</button></td></tr>`).join('')}${list.length===0?'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">尚無固定支出記錄</td></tr>':''}</tbody></table></div><div class="alert a-i mt12">換月後支出需重新填寫；進貨成本與人事薪資自動帶入</div>`;
+  $('eb').innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">固定支出</div><div class="mv">${$$(oT)}</div></div><div class="metric"><div class="ml">人事薪資</div><div class="mv">${$$(sT)}</div></div><div class="metric"><div class="ml">進貨成本</div><div class="mv">${$$(pT)}</div></div></div><div class="metric mt12" style="max-width:240px"><div class="ml">當月支出總計</div><div class="mv fser">${$$(grand)}</div></div><div class="card mt12"><table><thead><tr><th>類型</th><th>金額</th><th>備註</th><th></th></tr></thead><tbody>${list.map(e=>`<tr><td>${e.type}</td><td class="fb">${$$(e.amount)}</td><td class="tmut tsm">${e.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delExp('${e.id}')">刪除</button></td></tr>`).join('')}${list.length===0?'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">尚無固定支出</td></tr>':''}</tbody></table></div><div class="alert a-i mt12">換月後需重新填寫；進貨成本與人事薪資自動帶入</div>`;
 }
-function showExpModal(){showModal(`<div class="mtitle">新增支出項目</div><div class="fr c2"><div class="fg"><label>支出類型</label><select id="e-t" onchange="togExpC()">${EXP_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="fg"><label>金額</label><input type="number" id="e-a" placeholder="0" min="0"></div></div><div id="ec" style="display:none" class="fg mt8"><label>自訂類型名稱</label><input type="text" id="e-ct" placeholder="輸入類型"></div><div class="fg mt8"><label>備註</label><input type="text" id="e-n" placeholder="可選"></div><div class="divider"></div><div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bse" onclick="saveExp()">儲存至雲端</button></div>`);}
+function showExpModal(){showModal(`<div class="mtitle">新增支出</div><div class="fr c2"><div class="fg"><label>類型</label><select id="e-t" onchange="togExpC()">${EXP_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="fg"><label>金額</label><input type="number" id="e-a" placeholder="0" min="0"></div></div><div id="ec" style="display:none" class="fg mt8"><label>自訂類型</label><input type="text" id="e-ct" placeholder="輸入類型"></div><div class="fg mt8"><label>備註</label><input type="text" id="e-n" placeholder="可選"></div><div class="divider"></div><div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bse" onclick="saveExp()">儲存</button></div>`);}
 function togExpC(){const t=$('e-t')?.value,r=$('ec');if(r)r.style.display=t==='其他'?'block':'none';}
 async function saveExp(){
   const tSel=$('e-t').value,type=tSel==='其他'?($('e-ct').value||'其他'):tSel,amount=Number($('e-a').value||0);
   if(!amount)return alert('請填寫金額');
-  const btn=$('bse');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中';}
+  const btn=$('bse');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
   const[row]=await sbPost('expenses',{year:selYear,month:selMonth,type,amount,note:$('e-n').value});
-  C.expenses.push(row);toast('支出已儲存','ok');closeModal();rendExpList();
+  C.expenses.push(row);toast('已儲存','ok');closeModal();rendExp();
 }
-async function delExp(id){if(!confirm('確定刪除？'))return;await sbDelete('expenses',id);C.expenses=C.expenses.filter(e=>e.id!==id);toast('已刪除');rendExpList();}
+async function delExp(id){if(!confirm('確定刪除？'))return;await sbDelete('expenses',id);C.expenses=C.expenses.filter(e=>e.id!==id);toast('已刪除');rendExp();}
 
 // ══════════════════════════════════════════════
 //  MONTHLY
@@ -696,36 +730,43 @@ async function delExp(id){if(!confirm('確定刪除？'))return;await sbDelete('
 function renderMonthly(){$('content').innerHTML=`<div class="sh"><div class="st">月度報表</div>${ymSel(selYear,selMonth,'rendMonthly()')}</div><div id="mb"></div>`;rendMonthly();}
 function rendMonthly(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
-  const days=dyYM(y,m),purs=puYM(y,m),exps=exYM(y,m),staff=stYM(y,m);
+  const days=dyYM(y,m),purs=puYM(y,m),exps=exYM(y,m),staff=stYM(y,m),hols=holYM(y,m);
   const stR=days.reduce((s,d)=>s+Number(d.store||0),0),fpRaw=days.reduce((s,d)=>s+Number(d.foodpanda||0),0),ubRaw=days.reduce((s,d)=>s+Number(d.ubereats||0),0);
-  const fpA=fpRaw*.67,ubA=ubRaw*.69,tAdj=stR+fpA+ubA,wD=days.length;
+  const fpA=fpRaw*.67,ubA=ubRaw*.69,tAdj=stR+fpA+ubA,wD=days.length,holD=hols.length;
   const pC=purs.reduce((s,p)=>s+Number(p.amount||0),0),sC=staff.reduce((s,st)=>s+Number(st.salary||0),0),oC=exps.reduce((s,e)=>s+Number(e.amount||0),0),tExp=pC+sC+oC,profit=tAdj-tExp;
   let pm=m-1,py=y;if(pm<1){pm=12;py--;}
   const prevA=dyYM(py,pm).reduce((s,d)=>s+rev(d).total,0),gr=prevA>0?((tAdj-prevA)/prevA*100).toFixed(1):null;
   const pR=tAdj>0?pC/tAdj*100:0,sR=tAdj>0?sC/tAdj*100:0,eR=tAdj>0?tExp/tAdj*100:0;
+  const tgt=targetYM(y,m),tgtAmt=tgt?Number(tgt.amount):0,tgtPct=tgtAmt>0?Math.min(tAdj/tgtAmt*100,100):0;
   const sb=(r,g=30,ok=45)=>r<=g?'<span class="mbadge bs">優良</span>':r<=ok?'<span class="mbadge bw">尚可</span>':'<span class="mbadge bd">欠佳</span>';
-  $('mb').innerHTML=`<div class="cg c4"><div class="metric"><div class="ml">月工作天數</div><div class="mv">${wD} 天</div></div><div class="metric"><div class="ml">月總實收</div><div class="mv fser">${$$(tAdj)}</div></div><div class="metric"><div class="ml">平均每日</div><div class="mv">${$$(wD>0?tAdj/wD:0)}</div></div><div class="metric"><div class="ml">本月損益</div><div class="mv ${profit>=0?'tok':'tdan'} fser">${profit>=0?'+':''}${$$(profit)}</div></div></div>
-  <div class="cg c2 mt12">
-    <div class="card"><div class="card-title">營業額明細</div><table>
-      <tr><td>門市</td><td class="tr">${$$(stR)}</td></tr>
-      <tr><td>Foodpanda 原始</td><td class="tr">${$$(fpRaw)}</td></tr>
-      <tr><td class="tmut tsm">扣抽成 33%</td><td class="tr tmut">-${$$(fpRaw*.33)}</td></tr>
-      <tr><td>FP 實收</td><td class="tr">${$$(fpA)}</td></tr>
-      <tr><td>Uber Eats 原始</td><td class="tr">${$$(ubRaw)}</td></tr>
-      <tr><td class="tmut tsm">扣抽成 31%</td><td class="tr tmut">-${$$(ubRaw*.31)}</td></tr>
-      <tr><td>UE 實收</td><td class="tr">${$$(ubA)}</td></tr>
-      <tr><td class="fb">月總實收</td><td class="tr fb">${$$(tAdj)}</td></tr>
-    </table></div>
-    <div class="card"><div class="card-title">支出明細</div><table>
-      <tr><td>進貨成本</td><td class="tr">${$$(pC)}</td></tr>
-      <tr><td>人事薪資</td><td class="tr">${$$(sC)}</td></tr>
-      ${exps.map(e=>`<tr><td>${e.type}</td><td class="tr">${$$(e.amount)}</td></tr>`).join('')}
-      <tr><td class="fb">支出合計</td><td class="tr fb">${$$(tExp)}</td></tr>
-    </table><div class="divider"></div>
-    <div class="rf" style="justify-content:space-between"><span class="fb">本月實賺</span><span class="fb ${profit>=0?'tok':'tdan'}" style="font-size:16px">${profit>=0?'+':''}${$$(profit)}</span></div></div>
-  </div>
-  <div class="card mt12"><div class="card-title">成本佔比</div><div class="cg c3">${[{l:'進貨',v:pR,g:30,ok:45},{l:'人事',v:sR,g:30,ok:45},{l:'總支出',v:eR,g:60,ok:80}].map(it=>`<div><div class="rf" style="justify-content:space-between;margin-bottom:6px"><span class="tsm">${it.l} ${it.v.toFixed(1)}%</span>${sb(it.v,it.g,it.ok)}</div><div class="pbar"><div class="pfill ${it.v<=it.g?'pok':it.v<=it.ok?'pw':'pd'}" style="width:${Math.min(it.v,100)}%"></div></div></div>`).join('')}</div></div>
-  ${gr!==null?`<div class="alert ${Number(gr)>=0?'a-ok':'a-w'} mt12">與上月（${py}年${pm}月 實收 ${$$(prevA)}）相比：${Number(gr)>=0?'▲':'▼'} ${Math.abs(Number(gr))}%</div>`:''}`;
+  $('mb').innerHTML=`
+    ${tgtAmt>0?`<div class="card" style="margin-bottom:12px"><div class="card-title">🎯 月目標達成</div>
+      <div class="rf" style="justify-content:space-between;margin-bottom:4px"><span class="target-pct ${tgtPct>=100?'tok':tgtPct>=70?'twarn':'tdan'}" style="font-size:24px">${tgtPct.toFixed(1)}%</span><span class="tsm tmut">目標 ${$$(tgtAmt)}</span></div>
+      <div class="target-pbar"><div class="target-pfill ${tgtPct>=100?'pok':tgtPct>=70?'pw':'pd'}" style="width:${tgtPct}%"></div></div>
+      <div class="rf mt8" style="justify-content:space-between"><span class="tsm tok">已達 ${$$(tAdj)}</span><span class="tsm tdan">還差 ${$$(Math.max(tgtAmt-tAdj,0))}</span></div>
+    </div>`:''}
+    <div class="cg c4"><div class="metric"><div class="ml">工作天數</div><div class="mv">${wD}天 <span class="tsm tmut">/ 公休${holD}天</span></div></div><div class="metric"><div class="ml">月總實收</div><div class="mv fser">${$$(tAdj)}</div></div><div class="metric"><div class="ml">平均每日</div><div class="mv">${$$(wD>0?tAdj/wD:0)}</div></div><div class="metric"><div class="ml">本月損益</div><div class="mv ${profit>=0?'tok':'tdan'} fser">${profit>=0?'+':''}${$$(profit)}</div></div></div>
+    <div class="cg c2 mt12">
+      <div class="card"><div class="card-title">營業額明細</div><table>
+        <tr><td>門市</td><td class="tr">${$$(stR)}</td></tr>
+        <tr><td>Foodpanda 原始</td><td class="tr">${$$(fpRaw)}</td></tr>
+        <tr><td class="tmut tsm">扣33%</td><td class="tr tmut">-${$$(fpRaw*.33)}</td></tr>
+        <tr><td>FP 實收</td><td class="tr">${$$(fpA)}</td></tr>
+        <tr><td>Uber Eats 原始</td><td class="tr">${$$(ubRaw)}</td></tr>
+        <tr><td class="tmut tsm">扣31%</td><td class="tr tmut">-${$$(ubRaw*.31)}</td></tr>
+        <tr><td>UE 實收</td><td class="tr">${$$(ubA)}</td></tr>
+        <tr><td class="fb">月總實收</td><td class="tr fb">${$$(tAdj)}</td></tr>
+      </table></div>
+      <div class="card"><div class="card-title">支出明細</div><table>
+        <tr><td>進貨成本</td><td class="tr">${$$(pC)}</td></tr>
+        <tr><td>人事薪資</td><td class="tr">${$$(sC)}</td></tr>
+        ${exps.map(e=>`<tr><td>${e.type}</td><td class="tr">${$$(e.amount)}</td></tr>`).join('')}
+        <tr><td class="fb">支出合計</td><td class="tr fb">${$$(tExp)}</td></tr>
+      </table><div class="divider"></div>
+      <div class="rf" style="justify-content:space-between"><span class="fb">本月實賺</span><span class="fb ${profit>=0?'tok':'tdan'}" style="font-size:16px">${profit>=0?'+':''}${$$(profit)}</span></div></div>
+    </div>
+    <div class="card mt12"><div class="card-title">成本佔比</div><div class="cg c3">${[{l:'進貨',v:pR,g:30,ok:45},{l:'人事',v:sR,g:30,ok:45},{l:'總支出',v:eR,g:60,ok:80}].map(it=>`<div><div class="rf" style="justify-content:space-between;margin-bottom:6px"><span class="tsm">${it.l} ${it.v.toFixed(1)}%</span>${sb(it.v,it.g,it.ok)}</div><div class="pbar"><div class="pfill ${it.v<=it.g?'pok':it.v<=it.ok?'pw':'pd'}" style="width:${Math.min(it.v,100)}%"></div></div></div>`).join('')}</div></div>
+    ${gr!==null?`<div class="alert ${Number(gr)>=0?'a-ok':'a-w'} mt12">與上月（${py}年${pm}月 實收 ${$$(prevA)}）相比：${Number(gr)>=0?'▲':'▼'} ${Math.abs(Number(gr))}%</div>`:''}`;
 }
 
 // ══════════════════════════════════════════════
@@ -750,65 +791,243 @@ function rendAnal(){
 function renderYearly(){const yrs=[];for(let i=NOW.getFullYear();i>=2023;i--)yrs.push(i);$('content').innerHTML=`<div class="sh"><div class="st">年度報表</div><div class="fg" style="width:100px"><select id="yr-y" onchange="rendYearly()">${yrs.map(y=>`<option value="${y}"${y==selYear?' selected':''}>${y}年</option>`).join('')}</select></div></div><div id="yb"></div>`;rendYearly();}
 function rendYearly(){
   const y=Number($('yr-y')?.value||selYear);selYear=y;const py=y-1;
-  const mData=Array.from({length:12},(_,i)=>{
-    const m=i+1,days=dyYM(y,m),pDays=dyYM(py,m),rev2=days.reduce((s,d)=>s+rev(d).total,0),pRev=pDays.reduce((s,d)=>s+rev(d).total,0);
-    const purs=puYM(y,m),staff=stYM(y,m),exps=exYM(y,m),tExp=purs.reduce((s,p)=>s+Number(p.amount||0),0)+staff.reduce((s,st)=>s+Number(st.salary||0),0)+exps.reduce((s,e)=>s+Number(e.amount||0),0);
-    return{m,rev:rev2,pRev,tExp,profit:rev2-tExp,gr:pRev>0?((rev2-pRev)/pRev*100).toFixed(1):null,days:days.length};
-  });
+  const mData=Array.from({length:12},(_,i)=>{const m=i+1,days=dyYM(y,m),pDays=dyYM(py,m),rev2=days.reduce((s,d)=>s+rev(d).total,0),pRev=pDays.reduce((s,d)=>s+rev(d).total,0);const purs=puYM(y,m),staff=stYM(y,m),exps=exYM(y,m),tExp=purs.reduce((s,p)=>s+Number(p.amount||0),0)+staff.reduce((s,st)=>s+Number(st.salary||0),0)+exps.reduce((s,e)=>s+Number(e.amount||0),0);return{m,rev:rev2,pRev,tExp,profit:rev2-tExp,gr:pRev>0?((rev2-pRev)/pRev*100).toFixed(1):null,days:days.length};});
   const yT=mData.reduce((s,d)=>s+d.rev,0),yE=mData.reduce((s,d)=>s+d.tExp,0),yP=yT-yE,maxR=Math.max(...mData.map(d=>d.rev),1);
   $('yb').innerHTML=`<div class="cg c3"><div class="metric"><div class="ml">年度總實收</div><div class="mv fser">${$$(yT)}</div></div><div class="metric"><div class="ml">年度總支出</div><div class="mv">${$$(yE)}</div></div><div class="metric"><div class="ml">年度淨利</div><div class="mv ${yP>=0?'tok':'tdan'} fser">${yP>=0?'+':''}${$$(yP)}</div></div></div>
-  <div class="card mt12"><div class="card-title">月度視覺圖（${y}年）</div><div style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px">${mData.map(d=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:9px;color:var(--text-muted)">${d.rev>0?$$(d.rev):''}</div><div style="width:100%;background:${d.profit>=0?'var(--milk-500)':'var(--danger)'};border-radius:3px 3px 0 0;height:${d.rev>0?Math.max(d.rev/maxR*100,4):2}px"></div><div style="font-size:10px;color:var(--text-muted)">${d.m}月</div></div>`).join('')}</div></div>
-  <div class="card mt12"><div class="card-title">1-12月詳細報表</div><div class="sx"><table><thead><tr><th>月份</th><th>工作天</th><th>實收</th><th>支出</th><th>損益</th><th>vs去年同月</th><th>vs上月</th></tr></thead><tbody>${mData.map((d,i)=>{const pm=i>0?mData[i-1].rev:null,mg=pm!==null&&pm>0?((d.rev-pm)/pm*100).toFixed(1):null;return`<tr style="cursor:pointer" onclick="selMonth=${d.m};selYear=${y};navigate('monthly')"><td class="fb">${d.m}月</td><td>${d.days}天</td><td>${d.rev>0?$$(d.rev):'—'}</td><td>${d.tExp>0?$$(d.tExp):'—'}</td><td class="${d.profit>=0&&d.rev>0?'tok':'tdan'}">${d.rev>0?(d.profit>=0?'+':'')+$$(d.profit):'—'}</td><td>${d.gr!==null?`<span class="${Number(d.gr)>=0?'tok':'tdan'}">${Number(d.gr)>=0?'▲':'▼'}${Math.abs(Number(d.gr))}%</span>`:'—'}</td><td>${mg!==null?`<span class="${Number(mg)>=0?'tok':'tdan'}">${Number(mg)>=0?'▲':'▼'}${Math.abs(Number(mg))}%</span>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><div class="tmut tsm mt8">點擊月份可查看詳細月報</div></div>`;
+  <div class="card mt12"><div class="card-title">月度視覺圖（${y}年）</div><div style="display:flex;align-items:flex-end;gap:6px;height:130px;padding:0 4px">${mData.map(d=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:9px;color:var(--text-muted)">${d.rev>0?$$(d.rev):''}</div><div style="width:100%;background:${d.profit>=0?'var(--milk-500)':'var(--danger)'};border-radius:3px 3px 0 0;height:${d.rev>0?Math.max(d.rev/maxR*100,4):2}px"></div><div style="font-size:10px;color:var(--text-muted)">${d.m}月</div></div>`).join('')}</div></div>
+  <div class="card mt12"><div class="card-title">1-12月詳細報表</div><div class="sx"><table><thead><tr><th>月份</th><th>工作天</th><th>實收</th><th>支出</th><th>損益</th><th>vs去年</th><th>vs上月</th></tr></thead><tbody>${mData.map((d,i)=>{const pm=i>0?mData[i-1].rev:null,mg=pm!==null&&pm>0?((d.rev-pm)/pm*100).toFixed(1):null;return`<tr style="cursor:pointer" onclick="selMonth=${d.m};selYear=${y};navigate('monthly')"><td class="fb">${d.m}月</td><td>${d.days}天</td><td>${d.rev>0?$$(d.rev):'—'}</td><td>${d.tExp>0?$$(d.tExp):'—'}</td><td class="${d.profit>=0&&d.rev>0?'tok':'tdan'}">${d.rev>0?(d.profit>=0?'+':'')+$$(d.profit):'—'}</td><td>${d.gr!==null?`<span class="${Number(d.gr)>=0?'tok':'tdan'}">${Number(d.gr)>=0?'▲':'▼'}${Math.abs(Number(d.gr))}%</span>`:'—'}</td><td>${mg!==null?`<span class="${Number(mg)>=0?'tok':'tdan'}">${Number(mg)>=0?'▲':'▼'}${Math.abs(Number(mg))}%</span>`:'—'}</td></tr>`;}).join('')}</tbody></table></div><div class="tmut tsm mt8">點擊月份可查看詳細月報</div></div>`;
 }
+
+// ══════════════════════════════════════════════
+//  CHART (趨勢圖表)
+// ══════════════════════════════════════════════
+let chartInst = null;
+function renderChart(){
+  const yrs=[];for(let i=NOW.getFullYear();i>=2023;i--)yrs.push(i);
+  $('content').innerHTML=`<div class="sh"><div class="st">趨勢圖表</div>
+    <div class="rf">
+      <select id="ch-type" onchange="updChart()" style="width:130px"><option value="daily">每日營業額</option><option value="monthly">每月營業額</option><option value="profit">每月損益</option></select>
+      ${ymSel(selYear,selMonth,'updChart()','ch')}
+    </div>
+  </div>
+  <div class="card"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
+  <div class="card mt12" id="chart-stats"></div>`;
+  updChart();
+}
+function updChart(){
+  const type=$('ch-type')?.value||'daily';
+  const y=Number($('ch-y')?.value||selYear),m=Number($('ch-m')?.value||selMonth);
+  selYear=y;selMonth=m;
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  let labels=[],data=[],data2=[],label1='',label2='',color1='rgba(168,125,78,0.8)',color2='rgba(74,124,89,0.6)';
+  if(type==='daily'){
+    const days=[...dyYM(y,m)].sort((a,b)=>a.date.localeCompare(b.date));
+    labels=days.map(d=>d.date.slice(5));
+    data=days.map(d=>rev(d).total);
+    label1=`${y}年${m}月每日實收`;
+    // 7-day moving average
+    data2=data.map((_,i,arr)=>{const slice=arr.slice(Math.max(0,i-3),i+4);return Math.round(slice.reduce((a,b)=>a+b,0)/slice.length);});
+  } else if(type==='monthly'){
+    labels=Array.from({length:12},(_,i)=>`${i+1}月`);
+    data=labels.map((_,i)=>dyYM(y,i+1).reduce((s,d)=>s+rev(d).total,0));
+    const py=y-1;data2=labels.map((_,i)=>dyYM(py,i+1).reduce((s,d)=>s+rev(d).total,0));
+    label1=`${y}年`;label2=`${py}年（對比）`;
+  } else {
+    labels=Array.from({length:12},(_,i)=>`${i+1}月`);
+    data=labels.map((_,i)=>{const m2=i+1,r=dyYM(y,m2).reduce((s,d)=>s+rev(d).total,0),e=puYM(y,m2).reduce((s,p)=>s+Number(p.amount||0),0)+stYM(y,m2).reduce((s,st)=>s+Number(st.salary||0),0)+exYM(y,m2).reduce((s,e2)=>s+Number(e2.amount||0),0);return r-e;});
+    label1=`${y}年月損益`;color1='rgba(74,124,89,0.8)';
+  }
+  const ctx=document.getElementById('myChart');if(!ctx)return;
+  const datasets=[{label:label1,data,backgroundColor:color1,borderColor:color1.replace('0.8','1').replace('0.6','1'),borderWidth:2,fill:type==='daily',tension:.4,pointRadius:type==='daily'?3:5}];
+  if(data2.length&&(type==='daily'||type==='monthly')){datasets.push({label:label2||'7日均線',data:data2,borderColor:'rgba(42,90,140,0.7)',backgroundColor:'transparent',borderWidth:1.5,borderDash:type==='daily'?[4,3]:[],tension:.4,pointRadius:2});}
+  chartInst=new Chart(ctx,{type:type==='profit'?'bar':'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{family:"'Noto Sans TC',sans-serif",size:11},color:'#7a5c3a'}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${(ctx.parsed.y||0).toLocaleString()}`}}},scales:{y:{ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'k',font:{size:11},color:'#b09070'},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:11},color:'#b09070'},grid:{display:false}}}}});
+  // Stats
+  const valid=data.filter(v=>v!==0);
+  const cs=$('chart-stats');if(cs&&valid.length>0){
+    const mx=Math.max(...data),mn=Math.min(...valid.filter(v=>v>0)),avg=Math.round(valid.reduce((a,b)=>a+b,0)/valid.length);
+    cs.innerHTML=`<div class="card-title">數據摘要</div><div class="cg c3"><div class="metric"><div class="ml">最高</div><div class="mv">${$$(mx)}</div><div class="ms">${labels[data.indexOf(mx)]}</div></div><div class="metric"><div class="ml">最低（有記錄）</div><div class="mv">${$$(mn)}</div></div><div class="metric"><div class="ml">平均</div><div class="mv">${$$(avg)}</div></div></div>`;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  INVENTORY (庫存管理)
+// ══════════════════════════════════════════════
+function renderInventory(){
+  $('content').innerHTML=`<div class="sh"><div class="st">庫存管理</div><button class="btn btn-p btn-sm" onclick="showInvModal()">＋ 新增品項</button></div><div id="inv-alerts"></div><div id="inv-list"></div>`;
+  rendInv();
+}
+function rendInv(){
+  const list=C.inventory;
+  const alerts=list.filter(i=>Number(i.current_qty)<=Number(i.alert_qty));
+  const al=$('inv-alerts');
+  if(al)al.innerHTML=alerts.map(i=>`<div class="inv-alert">⚠️ <strong>${i.name}</strong> 庫存不足！現有 ${i.current_qty} ${i.unit}，低於警戒量 ${i.alert_qty} ${i.unit}</div>`).join('');
+  const il=$('inv-list');if(!il)return;
+  if(list.length===0){il.innerHTML='<div class="alert a-i mt12">尚無庫存品項，點上方「新增品項」開始管理庫存</div>';return;}
+  il.innerHTML=`<div class="card mt12"><div class="card-title">庫存清單</div>${list.map(i=>{const pct=Number(i.max_qty)>0?Math.min(Number(i.current_qty)/Number(i.max_qty)*100,100):50;const low=Number(i.current_qty)<=Number(i.alert_qty);return`<div class="inv-item"><div style="min-width:100px"><div class="tsm fb">${i.name}</div><div class="tsm tmut">${i.category==='A'?'A 食材':'B 耗材'}</div></div><div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-fill ${low?'pd':pct<50?'pw':'pok'}" style="width:${pct}%"></div></div><div class="tsm tmut" style="margin-top:2px">警戒：${i.alert_qty} ${i.unit}</div></div><div class="inv-qty ${low?'tdan':''}">${i.current_qty} <span class="tmut">${i.unit}</span></div><div class="rf" style="gap:4px;margin-left:8px"><button class="btn btn-ok btn-sm" onclick="adjInv('${i.id}',1,'${i.unit}')">＋</button><button class="btn btn-warn btn-sm" onclick="adjInv('${i.id}',-1,'${i.unit}')">－</button><button class="btn btn-d btn-sm" onclick="delInv('${i.id}')">✕</button></div></div>`;}).join('')}</div>`;
+}
+function showInvModal(){
+  showModal(`<div class="mtitle">新增庫存品項</div>
+    <div class="fr c2"><div class="fg"><label>品項名稱</label><input type="text" id="iv-n" placeholder="例：豬肉"></div><div class="fg"><label>類別</label><select id="iv-c"><option value="A">A 食材</option><option value="B">B 耗材</option></select></div></div>
+    <div class="fr c3"><div class="fg"><label>現有數量</label><input type="number" id="iv-qty" placeholder="0" min="0"></div><div class="fg"><label>警戒數量</label><input type="number" id="iv-alq" placeholder="0" min="0"></div><div class="fg"><label>最大數量</label><input type="number" id="iv-max" placeholder="100" min="0"></div></div>
+    <div class="fg mt8"><label>單位</label><input type="text" id="iv-u" placeholder="kg / 包 / 個" value="kg"></div>
+    <div class="divider"></div>
+    <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="biv" onclick="saveInv()">儲存</button></div>`);
+}
+async function saveInv(){
+  const name=$('iv-n').value;if(!name)return alert('請填寫品項名稱');
+  const btn=$('biv');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
+  const data={name,category:$('iv-c').value,current_qty:Number($('iv-qty').value||0),alert_qty:Number($('iv-alq').value||0),max_qty:Number($('iv-max').value||100),unit:$('iv-u').value||'個'};
+  const[row]=await sbPost('inventory',data);C.inventory.push(row);toast('品項已新增','ok');closeModal();rendInv();
+}
+async function adjInv(id,delta,unit){
+  const item=C.inventory.find(i=>i.id===id);if(!item)return;
+  const adj=prompt(`${delta>0?'增加':'減少'}數量（${unit}）：`,Math.abs(delta));
+  if(adj===null)return;
+  const newQty=Math.max(0,Number(item.current_qty)+(delta>0?1:-1)*Number(adj));
+  const[row]=await sbPatch('inventory',id,{current_qty:newQty});
+  Object.assign(item,row[0]||{current_qty:newQty});rendInv();
+}
+async function delInv(id){if(!confirm('確定刪除此庫存品項？'))return;await sbDelete('inventory',id);C.inventory=C.inventory.filter(i=>i.id!==id);toast('已刪除');rendInv();}
 
 // ══════════════════════════════════════════════
 //  SETTINGS
 // ══════════════════════════════════════════════
 function renderSettings(){
-  $('content').innerHTML=`<div class="sh"><div class="st">廠商與品項設定</div><div class="tmut tsm">資料儲存於 Supabase 雲端，所有裝置同步</div></div>
-  <div class="cg c2">
-    <div><div class="ss"><div class="ss-title"><span>常用廠商名單</span><span class="tmut tsm" id="vc2">${C.vendors.length} 個</span></div><div class="chip-list" id="vchips"></div><div class="ai mt8"><input type="text" id="nv" placeholder="輸入新廠商名稱" onkeydown="if(event.key==='Enter')addV()"><button class="btn btn-p btn-sm" onclick="addV()">新增</button></div></div></div>
-    <div>
-      <div class="ss"><div class="ss-title"><span><span class="tag ta">A 食材</span> 進貨品項</span><span class="tmut tsm" id="ac2">${C.itemsA.length} 項</span></div><div class="chip-list" id="achips"></div><div class="ai mt8"><input type="text" id="na" placeholder="輸入新食材品項" onkeydown="if(event.key==='Enter')addI('A')"><button class="btn btn-p btn-sm" onclick="addI('A')">新增</button></div></div>
-      <div class="ss"><div class="ss-title"><span><span class="tag tb">B 耗材</span> 進貨品項</span><span class="tmut tsm" id="bc2">${C.itemsB.length} 項</span></div><div class="chip-list" id="bchips"></div><div class="ai mt8"><input type="text" id="nb" placeholder="輸入新耗材品項" onkeydown="if(event.key==='Enter')addI('B')"><button class="btn btn-p btn-sm" onclick="addI('B')">新增</button></div></div>
+  const lineToken=localStorage.getItem('erp_line_token')||'';
+  const currPw=localStorage.getItem('erp_pw')||DEFAULT_PW;
+  $('content').innerHTML=`
+  <div class="st" style="margin-bottom:16px">系統設定</div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🎯 月度目標設定</div>
+    <div class="fr c2">
+      ${ymSel(selYear,selMonth,'','tgt')}
+      <div class="fg"><label>目標營業額</label><input type="number" id="tgt-amt" placeholder="0" min="0"></div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="saveTarget()">儲存目標</button>
+    <div id="tgt-cur" class="tsm tmut mt8"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🔔 LINE 通知設定</div>
+    <div class="fg" style="margin-bottom:10px"><label>LINE Notify Token</label><input type="text" id="line-token" placeholder="輸入你的 LINE Notify Token" value="${lineToken}"></div>
+    <div class="rf" style="gap:8px">
+      <button class="btn btn-ok btn-sm" onclick="saveLineToken()">儲存 Token</button>
+      <button class="btn btn-info btn-sm" onclick="testLine()">測試發送</button>
+      ${lineToken?'<span class="tsm tok">✓ 已設定</span>':'<span class="tsm tdan">未設定</span>'}
+    </div>
+    <div class="tsm tmut mt8">儲存每日記錄時自動發送 LINE 通知。Token 儲存在本機瀏覽器。</div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🔐 登入密碼</div>
+    <div class="fr c2">
+      <div class="fg"><label>新密碼</label><input type="password" id="pw-new" placeholder="輸入新密碼"></div>
+      <div class="fg"><label>確認新密碼</label><input type="password" id="pw-confirm" placeholder="再次輸入"></div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="changePw()">變更密碼</button>
+    <div class="tsm tmut mt8">目前密碼：${currPw==='1234'?'<span class="twarn">尚未設定，使用預設 1234，建議修改</span>':'已自訂'}</div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">廠商與品項管理</div>
+    <div class="cg c2">
+      <div>
+        <div class="ss"><div class="ss-title"><span>廠商名單</span><span class="tmut tsm" id="vc2">${C.vendors.length} 個</span></div><div class="chip-list" id="vchips"></div><div class="ai mt8"><input type="text" id="nv" placeholder="新廠商名稱" onkeydown="if(event.key==='Enter')addV()"><button class="btn btn-p btn-sm" onclick="addV()">新增</button></div></div>
+      </div>
+      <div>
+        <div class="ss"><div class="ss-title"><span><span class="tag ta">A 食材</span></span><span class="tmut tsm" id="ac2">${C.itemsA.length} 項</span></div><div class="chip-list" id="achips"></div><div class="ai mt8"><input type="text" id="na" placeholder="新食材品項" onkeydown="if(event.key==='Enter')addI('A')"><button class="btn btn-p btn-sm" onclick="addI('A')">新增</button></div></div>
+        <div class="ss"><div class="ss-title"><span><span class="tag tb">B 耗材</span></span><span class="tmut tsm" id="bc2">${C.itemsB.length} 項</span></div><div class="chip-list" id="bchips"></div><div class="ai mt8"><input type="text" id="nb" placeholder="新耗材品項" onkeydown="if(event.key==='Enter')addI('B')"><button class="btn btn-p btn-sm" onclick="addI('B')">新增</button></div></div>
+      </div>
     </div>
   </div>
-  <div class="alert a-i mt12">所有設定即時同步至 Supabase PostgreSQL，換裝置使用時自動載入</div>`;
-  rendChips();
+
+  <button class="btn btn-d btn-sm" onclick="lockScreen()">🔒 鎖定系統</button>`;
+  rendChips();showCurrentTarget();
 }
+
+// Target
+async function showCurrentTarget(){
+  const y=Number($('tgt-y')?.value||selYear),m=Number($('tgt-m')?.value||selMonth);
+  if(!C.loaded['targets']){C.targets=await sbGet('monthly_targets');C.loaded['targets']=true;}
+  const tgt=targetYM(y,m);
+  const el=$('tgt-cur');if(el)el.textContent=tgt?`目前目標：${$$(tgt.amount)}`:'此月份尚未設定目標';
+  if(tgt&&$('tgt-amt'))$('tgt-amt').value=tgt.amount;
+}
+async function saveTarget(){
+  const y=Number($('tgt-y')?.value||selYear),m=Number($('tgt-m')?.value||selMonth);
+  const amt=Number($('tgt-amt')?.value||0);if(!amt)return alert('請填寫目標金額');
+  if(!C.loaded['targets']){C.targets=await sbGet('monthly_targets');C.loaded['targets']=true;}
+  const existing=targetYM(y,m);
+  if(existing){const[row]=await sbPatch('monthly_targets',existing.id,{amount:amt});Object.assign(existing,row[0]||{amount:amt});}
+  else{const[row]=await sbPost('monthly_targets',{year:y,month:m,amount:amt});C.targets.push(row);}
+  toast(`${y}年${m}月目標已設定：${$$(amt)}`,'ok');showCurrentTarget();
+}
+
+// LINE
+function saveLineToken(){const t=$('line-token')?.value?.trim();localStorage.setItem('erp_line_token',t);toast('LINE Token 已儲存','ok');renderSettings();}
+async function testLine(){
+  const t=localStorage.getItem('erp_line_token');if(!t)return alert('請先填寫並儲存 LINE Token');
+  await sendLineNotify(t,'🧪 二鍋頭潮州店 — LINE 通知測試成功！');toast('測試通知已發送，請查看 LINE','ok');
+}
+
+// Password
+function changePw(){
+  const n=$('pw-new')?.value,c=$('pw-confirm')?.value;
+  if(!n)return alert('請輸入新密碼');
+  if(n!==c)return alert('兩次密碼不一致');
+  if(n.length<4)return alert('密碼至少 4 位數');
+  localStorage.setItem('erp_pw',n);toast('密碼已更新','ok');renderSettings();
+}
+function lockScreen(){if(!confirm('確定鎖定系統？'))return;sessionStorage.removeItem('erp_unlocked');location.reload();}
+
+// Chips / vendors / items
 function rendChips(){
   const vc=$('vchips'),ia=$('achips'),ib=$('bchips');
-  if(vc)vc.innerHTML=C.vendors.map(v=>`<span class="chip chip-v">${v.name}<button class="chip-del" onclick="remV('${v.id}','${v.name.replace(/'/g,"\\'")}')">✕</button></span>`).join('')||'<span class="tmut tsm" style="padding:4px">尚無廠商</span>';
-  if(ia)ia.innerHTML=C.itemsA.map(v=>`<span class="chip chip-a">${v.name}<button class="chip-del" onclick="remI('A','${v.id}','${v.name.replace(/'/g,"\\'")}')">✕</button></span>`).join('')||'<span class="tmut tsm" style="padding:4px">尚無品項</span>';
-  if(ib)ib.innerHTML=C.itemsB.map(v=>`<span class="chip chip-b">${v.name}<button class="chip-del" onclick="remI('B','${v.id}','${v.name.replace(/'/g,"\\'")}')">✕</button></span>`).join('')||'<span class="tmut tsm" style="padding:4px">尚無品項</span>';
+  if(vc)vc.innerHTML=C.vendors.map(v=>`<span class="chip chip-v">${v.name}<button class="chip-del" onclick="remV('${v.id}','${v.name.replace(/'/g,"\\'")}')">✕</button></span>`).join('')||'<span class="tmut tsm" style="padding:4px">尚無</span>';
+  if(ia)ia.innerHTML=C.itemsA.map(v=>`<span class="chip chip-a">${v.name}<button class="chip-del" onclick="remI('A','${v.id}','${v.name.replace(/'/g,"\\'")}')">✕</button></span>`).join('')||'<span class="tmut tsm" style="padding:4px">尚無</span>';
+  if(ib)ib.innerHTML=C.itemsB.map(v=>`<span class="chip chip-b">${v.name}<button class="chip-del" onclick="remI('B','${v.id}','${v.name.replace(/'/g,"\\'")}')">✕</button></span>`).join('')||'<span class="tmut tsm" style="padding:4px">尚無</span>';
   const vc2=$('vc2');if(vc2)vc2.textContent=C.vendors.length+' 個';
   const ac2=$('ac2');if(ac2)ac2.textContent=C.itemsA.length+' 項';
   const bc2=$('bc2');if(bc2)bc2.textContent=C.itemsB.length+' 項';
 }
-async function addV(){const inp=$('nv'),val=inp?.value?.trim();if(!val)return;if(vNames().includes(val)){alert('廠商已存在');return;}const[row]=await sbPost('settings_vendors',{name:val});C.vendors.push(row);inp.value='';rendChips();toast('廠商已新增','ok');}
-async function remV(id,name){if(!confirm(`確定移除廠商「${name}」？`))return;await sbDelete('settings_vendors',id);C.vendors=C.vendors.filter(v=>v.id!==id);rendChips();toast('已移除');}
-async function addI(cat){const inp=$(cat==='A'?'na':'nb'),val=inp?.value?.trim();if(!val)return;const arr=cat==='A'?C.itemsA:C.itemsB,tbl=cat==='A'?'settings_items_a':'settings_items_b';if(arr.map(v=>v.name).includes(val)){alert('品項已存在');return;}const[row]=await sbPost(tbl,{name:val});arr.push(row);inp.value='';rendChips();toast('品項已新增','ok');}
-async function remI(cat,id,name){if(!confirm(`確定移除品項「${name}」？`))return;const tbl=cat==='A'?'settings_items_a':'settings_items_b';await sbDelete(tbl,id);if(cat==='A')C.itemsA=C.itemsA.filter(v=>v.id!==id);else C.itemsB=C.itemsB.filter(v=>v.id!==id);rendChips();toast('已移除');}
+async function addV(){const inp=$('nv'),val=inp?.value?.trim();if(!val)return;if(vNames().includes(val)){alert('已存在');return;}const[row]=await sbPost('settings_vendors',{name:val});C.vendors.push(row);inp.value='';rendChips();toast('已新增','ok');}
+async function remV(id,name){if(!confirm(`確定移除「${name}」？`))return;await sbDelete('settings_vendors',id);C.vendors=C.vendors.filter(v=>v.id!==id);rendChips();toast('已移除');}
+async function addI(cat){const inp=$(cat==='A'?'na':'nb'),val=inp?.value?.trim();if(!val)return;const arr=cat==='A'?C.itemsA:C.itemsB,tbl=cat==='A'?'settings_items_a':'settings_items_b';if(arr.map(v=>v.name).includes(val)){alert('已存在');return;}const[row]=await sbPost(tbl,{name:val});arr.push(row);inp.value='';rendChips();toast('已新增','ok');}
+async function remI(cat,id,name){if(!confirm(`確定移除「${name}」？`))return;const tbl=cat==='A'?'settings_items_a':'settings_items_b';await sbDelete(tbl,id);if(cat==='A')C.itemsA=C.itemsA.filter(v=>v.id!==id);else C.itemsB=C.itemsB.filter(v=>v.id!==id);rendChips();toast('已移除');}
 
 // ══════════════════════════════════════════════
-//  INIT
+//  NAV BINDING
 // ══════════════════════════════════════════════
 document.querySelectorAll('.nav-item[data-p]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.p)));
 $('tdate').textContent=NOW.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 
-(async()=>{
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+const DEFAULT_PW = '1234';
+async function bootApp(){
   sync('syncing','連線中...');
   try{
     await loadSettings();
-    C.daily=await sbGet('daily'); C.loaded['daily']=true;
+    C.daily=await sbGet('daily');C.loaded['daily']=true;
+    C.holidays=await sbGet('holidays');C.loaded['holidays']=true;
+    C.targets=await sbGet('monthly_targets');C.loaded['targets']=true;
+    C.inventory=await sbGet('inventory');C.loaded['inventory']=true;
     sync('online','Supabase 已連線');
-    navigate('dashboard');
+    navigate('quick');
   }catch(e){
-    console.error(e);
-    sync('error','連線失敗');
-    $('content').innerHTML=`<div style="padding:40px 24px"><div class="alert a-d">⚠️ 連線至 Supabase 失敗：${e.message}<br><br>請確認：<br>1. 網路連線正常<br>2. Supabase 資料表已建立（執行 SQL）<br>3. RLS Policy 已設定允許讀寫</div></div>`;
+    console.error(e);sync('error','連線失敗');
+    $('content').innerHTML=`<div style="padding:40px 24px"><div class="alert a-d">⚠️ 連線至 Supabase 失敗：${e.message}<br><br>請確認網路連線與資料表是否建立完成。</div></div>`;
   }
-})();
+}
+
+// Auto-unlock if already authenticated this session
+if(sessionStorage.getItem('erp_unlocked')==='1'){
+  $('lock-screen').style.display='none';
+  $('main-app').style.display='flex';
+  bootApp();
+}
 </script>
 </body>
 </html>
