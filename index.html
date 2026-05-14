@@ -148,13 +148,75 @@ tr:hover td{background:var(--milk-50)}
 @keyframes rot{to{transform:rotate(360deg)}}
 
 /* Toast */
-#toasts{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+#toasts{position:fixed;bottom:80px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+@media(min-width:769px){#toasts{bottom:24px;right:24px}}
 .toast{background:var(--milk-800);color:#f5ead8;padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.25);animation:tin .22s ease;max-width:300px}
 .toast.ok{background:#3a6b48}.toast.err{background:#7a2828}
 @keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 .ploading{display:flex;align-items:center;justify-content:center;padding:80px;color:var(--text-muted);font-size:13px;gap:10px}
 .pspin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--milk-500);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
+
+/* ══ MOBILE RESPONSIVE ══ */
+/* Bottom nav (mobile only) */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--milk-900);z-index:200;padding:0 0 env(safe-area-inset-bottom);border-top:1px solid rgba(255,255,255,.1)}
+.bnav-inner{display:flex;align-items:stretch}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;cursor:pointer;color:var(--milk-500);font-size:9px;gap:4px;transition:color .18s;border:none;background:none;font-family:'Noto Sans TC',sans-serif;line-height:1.2;min-height:52px}
+.bnav-item.active{color:#f5ead8}
+.bnav-icon{font-size:18px;line-height:1}
+/* Menu drawer overlay */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--milk-900);z-index:160;transform:translateX(-100%);transition:transform .28s ease;overflow-y:auto}
+.drawer.open{transform:translateX(0)}
+
+/* Hamburger in topbar */
+.menu-btn{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary)}
+.menu-btn svg{width:22px;height:22px}
+
+@media(max-width:768px){
+  /* hide desktop sidebar */
+  .sidebar{display:none}
+  .main{margin-left:0;padding-bottom:64px}
+  .topbar{padding:10px 16px}
+  .topbar-date{display:none}
+  .menu-btn{display:flex;align-items:center}
+  .content{padding:14px 14px}
+  /* show bottom nav */
+  .bottom-nav{display:block}
+  /* grid responsive */
+  .c4{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:1fr 1fr}
+  .c2{grid-template-columns:1fr}
+  .fr.c2{grid-template-columns:1fr}
+  .fr.c3{grid-template-columns:1fr}
+  /* metric value smaller */
+  .mv{font-size:18px}
+  /* section header stack */
+  .sh{flex-direction:column;align-items:flex-start;gap:10px}
+  /* modal full width */
+  .mov{padding:0;align-items:flex-end}
+  .modal{border-radius:16px 16px 0 0;max-height:92vh;max-width:100%;padding:20px 16px}
+  /* table font */
+  th,td{font-size:12px;padding:7px 8px}
+  /* cards */
+  .card{padding:12px}
+  /* month grid 3 col on mobile */
+  #month-grid{grid-template-columns:repeat(4,1fr)!important}
+  /* chips wrap tight */
+  .chip{font-size:11px;padding:2px 6px 2px 8px}
+  /* settings single col */
+  .cg.c2>.ss-wrap{grid-column:1/-1}
+  /* hide yearly bar labels on mobile */
+  .bar-label{display:none}
+  /* rf wrap tighter */
+  .rf{gap:6px}
+}
+@media(max-width:400px){
+  .c4{grid-template-columns:1fr 1fr}
+  .mv{font-size:16px}
+  .bottom-nav .bnav-item{font-size:8px}
+}
 </style>
 </head>
 <body>
@@ -200,8 +262,18 @@ tr:hover td{background:var(--milk-50)}
   </div>
   <div class="main">
     <div class="topbar">
-      <div class="topbar-title" id="ttitle">營運總覽</div>
-      <div class="topbar-date" id="tdate"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="menu-btn" onclick="openDrawer()" aria-label="開啟選單">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-title" id="ttitle">營運總覽</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="topbar-date" id="tdate"></div>
+        <div class="sync-row" style="margin:0">
+          <div class="sync-dot online" id="sdot2"></div>
+        </div>
+      </div>
     </div>
     <div class="content" id="content">
       <div class="ploading"><div class="pspin"></div>連線至 Supabase 雲端...</div>
@@ -212,9 +284,81 @@ tr:hover td{background:var(--milk-50)}
 <div id="mc"></div>
 <div id="toasts"></div>
 
+<!-- Mobile drawer overlay -->
+<div class="drawer-overlay" id="drawer-ov" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="sidebar-brand" style="padding:20px 16px 14px">
+    <div class="brand-logo">二鍋頭東山鴨頭</div>
+    <div class="brand-sub">潮州店 · 營運管理系統</div>
+    <div class="sync-row" style="margin-top:6px">
+      <div class="sync-dot" id="sdot3"></div>
+      <span id="slabel2">連線中...</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-label">總覽</div>
+      <div class="nav-item" data-dp="dashboard" onclick="navigateMobile('dashboard')">◈ 營運總覽</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">每日記錄</div>
+      <div class="nav-item" data-dp="daily" onclick="navigateMobile('daily')">◇ 每日營業額</div>
+      <div class="nav-item" data-dp="purchase" onclick="navigateMobile('purchase')">◆ 進貨記錄</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">月度管理</div>
+      <div class="nav-item" data-dp="monthly" onclick="navigateMobile('monthly')">▽ 月度報表</div>
+      <div class="nav-item" data-dp="staff" onclick="navigateMobile('staff')">▲ 人事薪資</div>
+      <div class="nav-item" data-dp="expense" onclick="navigateMobile('expense')">○ 支出管理</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">分析報告</div>
+      <div class="nav-item" data-dp="analysis" onclick="navigateMobile('analysis')">◉ 成本分析</div>
+      <div class="nav-item" data-dp="yearly" onclick="navigateMobile('yearly')">◎ 年度報表</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">系統設定</div>
+      <div class="nav-item" data-dp="settings" onclick="navigateMobile('settings')">⚙ 廠商與品項設定</div>
+    </div>
+  </nav>
+</div>
+
+<!-- Bottom navigation (mobile) -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bnav-inner">
+    <button class="bnav-item active" data-bp="dashboard" onclick="navigate('dashboard')">
+      <span class="bnav-icon">◈</span>總覽
+    </button>
+    <button class="bnav-item" data-bp="daily" onclick="navigate('daily')">
+      <span class="bnav-icon">◇</span>營業額
+    </button>
+    <button class="bnav-item" data-bp="purchase" onclick="navigate('purchase')">
+      <span class="bnav-icon">◆</span>進貨
+    </button>
+    <button class="bnav-item" data-bp="monthly" onclick="navigate('monthly')">
+      <span class="bnav-icon">▽</span>月報
+    </button>
+    <button class="bnav-item" data-bp="menu" onclick="openDrawer()">
+      <span class="bnav-icon">☰</span>更多
+    </button>
+  </div>
+</nav>
+
 <script>
 // ══════════════════════════════════════════════
-//  SUPABASE CONFIG
+//  MOBILE DRAWER
+// ══════════════════════════════════════════════
+function openDrawer(){$('drawer').classList.add('open');$('drawer-ov').classList.add('open');}
+function closeDrawer(){$('drawer').classList.remove('open');$('drawer-ov').classList.remove('open');}
+function navigateMobile(page){closeDrawer();navigate(page);}
+
+// ══════════════════════════════════════════════
+//  SYNC (update all indicators)
+// ══════════════════════════════════════════════
+function sync(s,lbl){
+  ['sdot','sdot2','sdot3'].forEach(id=>{const d=$(id);if(d)d.className='sync-dot '+s;});
+  ['slabel','slabel2'].forEach(id=>{const l=$(id);if(l)l.textContent=lbl;});
+}
 // ══════════════════════════════════════════════
 const SB_URL = 'https://ghzbanepobjheethmpof.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoemJhbmVwb2JqaGVldGhtcG9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MjU2NzQsImV4cCI6MjA5NDMwMTY3NH0.9PRjQmvNr261gYBQBoN9WK0HPnSV2ZvgFbDnT_itbAY';
@@ -257,7 +401,10 @@ const EXP_TYPES = ['人事薪資','租金','電信費','台電','水電費','其
 //  UI HELPERS
 // ══════════════════════════════════════════════
 const $ = id => document.getElementById(id);
-function sync(s, lbl) { const d=$('sdot'), l=$('slabel'); if(d) d.className='sync-dot '+s; if(l) l.textContent=lbl; }
+function sync(s, lbl) {
+  ['sdot','sdot2','sdot3'].forEach(id=>{const d=$(id);if(d)d.className='sync-dot '+s;});
+  ['slabel','slabel2'].forEach(id=>{const l=$(id);if(l)l.textContent=lbl;});
+}
 function loading(on) {
   const f=$('lf'); if(!f) return;
   if(on){ f.style.opacity='1'; f.style.width='0'; requestAnimationFrame(()=>f.style.width='65%'); }
@@ -329,9 +476,16 @@ const PAGE_COLS = {
 const PAGE_COL_MAP = { daily:['daily','daily'], purchases:['purchases','purchases'], staff:['staff','staff'], expenses:['expenses','expenses'] };
 
 async function navigate(page) {
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active', el.dataset.p===page));
+  // Desktop sidebar
+  document.querySelectorAll('.nav-item[data-p]').forEach(el=>el.classList.toggle('active', el.dataset.p===page));
+  // Mobile drawer
+  document.querySelectorAll('.nav-item[data-dp]').forEach(el=>el.classList.toggle('active', el.dataset.dp===page));
+  // Bottom nav
+  document.querySelectorAll('.bnav-item[data-bp]').forEach(el=>el.classList.toggle('active', el.dataset.bp===page));
   $('ttitle').textContent = TITLES[page]||page;
   $('content').innerHTML = '<div class="ploading"><div class="pspin"></div>載入中...</div>';
+  // Scroll to top on mobile
+  window.scrollTo(0,0);
   loading(true);
   const needCols = PAGE_COLS[page]||[];
   for(const col of needCols) {
