@@ -470,6 +470,8 @@ async function navigate(page){
 function renderQuick(){
   const today=new Date().toISOString().split('T')[0];
   const existing=C.daily.find(d=>d.date===today);
+  // 反推 總營業額 = store + ubereats原始
+  const existTotal=existing?(Number(existing.store||0)+Number(existing.ubereats||0)):0;
   $('content').innerHTML=`<div class="qi-wrap">
     <div class="qi-date-row">
       <input type="date" id="qi-date" value="${today}" onchange="checkExistingQuick()">
@@ -477,8 +479,8 @@ function renderQuick(){
     </div>
     ${existing?`<div class="alert a-w" style="margin-bottom:16px">此日期已有記錄，儲存將覆蓋舊資料</div>`:''}
     <div class="qi-field">
-      <div class="qi-label"><span>🏪 門市營業額</span><span class="tmut tsm">元</span></div>
-      <input type="number" class="qi-input" id="qi-store" placeholder="0" min="0" value="${existing?existing.store:''}" oninput="calcQiTotal()">
+      <div class="qi-label"><span>💰 總營業額（POS 顯示）</span><span class="tmut tsm">元</span></div>
+      <input type="number" class="qi-input" id="qi-total-rev" placeholder="0" min="0" value="${existing?existTotal:''}" oninput="calcQiTotal()">
     </div>
     <div class="qi-field">
       <div class="qi-label"><span>🛵 Foodpanda（原始）</span><span style="color:var(--danger);font-size:11px">扣33% 後實收</span></div>
@@ -487,6 +489,11 @@ function renderQuick(){
     <div class="qi-field">
       <div class="qi-label"><span>🚗 Uber Eats（原始）</span><span style="color:var(--danger);font-size:11px">扣31% 後實收</span></div>
       <input type="number" class="qi-input" id="qi-ub" placeholder="0" min="0" value="${existing?existing.ubereats:''}" oninput="calcQiTotal()">
+    </div>
+    <div class="qi-field">
+      <div class="qi-label"><span>🏪 門市營業額</span><span style="color:var(--info);font-size:11px">自動計算 = 總營業額 - UE</span></div>
+      <input type="number" class="qi-input" id="qi-store" placeholder="0" readonly
+        style="background:var(--milk-100);color:var(--text-secondary);cursor:not-allowed" value="${existing?existing.store:''}">
     </div>
     <div class="qi-total">
       <div>
@@ -504,15 +511,28 @@ function renderQuick(){
   calcQiTotal();
 }
 function calcQiTotal(){
-  const st=Number($('qi-store')?.value||0),fp=Number($('qi-fp')?.value||0),ub=Number($('qi-ub')?.value||0);
-  const adj=st+fp*.67+ub*.69,raw=st+fp+ub;
+  const totalRev=Number($('qi-total-rev')?.value||0);
+  const fp=Number($('qi-fp')?.value||0);
+  const ub=Number($('qi-ub')?.value||0);
+  const store=Math.max(0, totalRev-ub);
+  const storeEl=$('qi-store');if(storeEl)storeEl.value=store||'';
+  const adj=store+fp*.67+ub*.69;
+  const raw=totalRev+fp;
   const t=$('qi-total'),r=$('qi-raw');
   if(t)t.textContent=$$(adj);if(r)r.textContent=$$(raw);
 }
 function checkExistingQuick(){
-  const date=$('qi-date')?.value;const existing=C.daily.find(d=>d.date===date);
-  if(existing){$('qi-store').value=existing.store||'';$('qi-fp').value=existing.foodpanda||'';$('qi-ub').value=existing.ubereats||'';$('qi-note').value=existing.note||'';}
-  else{$('qi-store').value='';$('qi-fp').value='';$('qi-ub').value='';$('qi-note').value='';}
+  const date=$('qi-date')?.value;
+  const existing=C.daily.find(d=>d.date===date);
+  const existTotal=existing?(Number(existing.store||0)+Number(existing.ubereats||0)):0;
+  if(existing){
+    $('qi-total-rev').value=existTotal||'';
+    $('qi-fp').value=existing.foodpanda||'';
+    $('qi-ub').value=existing.ubereats||'';
+    $('qi-note').value=existing.note||'';
+  } else {
+    $('qi-total-rev').value='';$('qi-fp').value='';$('qi-ub').value='';$('qi-note').value='';
+  }
   calcQiTotal();
 }
 async function saveQuick(){
@@ -520,7 +540,8 @@ async function saveQuick(){
   const btn=$('qi-btn');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中...';}
   const exists=C.daily.find(d=>d.date===date);
   if(exists){await sbDelete('daily',exists.id);C.daily=C.daily.filter(d=>d.id!==exists.id);}
-  const data={date,store:Number($('qi-store').value||0),foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),note:$('qi-note').value};
+  const store=Number($('qi-store').value||0);
+  const data={date,store,foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),note:$('qi-note').value};
   const [row]=await sbPost('daily',data);C.daily.push(row);
   toast('今日記錄已儲存 ✓','ok');
   if(btn){btn.disabled=false;btn.innerHTML='💾 儲存今日記錄';}
@@ -609,11 +630,27 @@ function filtDaily(){
 function showDailyModal(){
   const today=new Date().toISOString().split('T')[0];
   showModal(`<div class="mtitle">新增每日營業額</div>
-    <div class="fr c2"><div class="fg"><label>日期</label><input type="date" id="d-d" value="${today}"></div><div class="fg"><label>門市</label><input type="number" id="d-s" placeholder="0" min="0"></div></div>
-    <div class="fr c2"><div class="fg"><label>Foodpanda（原始）</label><input type="number" id="d-f" placeholder="0" min="0"></div><div class="fg"><label>Uber Eats（原始）</label><input type="number" id="d-u" placeholder="0" min="0"></div></div>
+    <div class="fr c2">
+      <div class="fg"><label>日期</label><input type="date" id="d-d" value="${today}"></div>
+      <div class="fg"><label>💰 總營業額（POS 顯示）</label><input type="number" id="d-total" placeholder="0" min="0" oninput="calcDailyStore()"></div>
+    </div>
+    <div class="fr c2">
+      <div class="fg"><label>🛵 Foodpanda（原始）</label><input type="number" id="d-f" placeholder="0" min="0" oninput="calcDailyStore()"></div>
+      <div class="fg"><label>🚗 Uber Eats（原始）</label><input type="number" id="d-u" placeholder="0" min="0" oninput="calcDailyStore()"></div>
+    </div>
+    <div class="fg mt8">
+      <label>🏪 門市營業額 <span style="color:var(--info);font-size:11px">自動計算 = 總營業額 - UE</span></label>
+      <input type="number" id="d-s" placeholder="0" readonly style="background:var(--milk-100);color:var(--text-secondary)">
+    </div>
     <div class="fg mt8"><label>備註</label><input type="text" id="d-n" placeholder="可選"></div>
     <div class="divider"></div>
     <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsd" onclick="saveDaily()">儲存</button></div>`);
+}
+function calcDailyStore(){
+  const total=Number($('d-total')?.value||0);
+  const ub=Number($('d-u')?.value||0);
+  const store=Math.max(0,total-ub);
+  const el=$('d-s');if(el)el.value=store||'';
 }
 async function saveDaily(){
   const date=$('d-d').value;if(!date)return alert('請選擇日期');
@@ -629,6 +666,10 @@ async function delDaily(id){if(!confirm('確定刪除？'))return;await sbDelete
 // ══════════════════════════════════════════════
 //  HOLIDAYS
 // ══════════════════════════════════════════════
+function getWeeklyOff(){try{return JSON.parse(localStorage.getItem('erp_weekly_off')||'[]');}catch(e){return[];}}
+function saveWeeklyOff(arr){localStorage.setItem('erp_weekly_off',JSON.stringify(arr));}
+const WEEKDAYS=['日','一','二','三','四','五','六'];
+
 function renderHolidays(){
   $('content').innerHTML=`<div class="sh"><div class="st">公休日管理</div>${ymSel(selYear,selMonth,'rendHols()')}</div><div id="hb"></div>`;
   rendHols();
@@ -636,17 +677,73 @@ function renderHolidays(){
 function rendHols(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const hols=[...holYM(y,m)].sort((a,b)=>a.date.localeCompare(b.date));
-  $('hb').innerHTML=`<div class="card">
-    <div class="card-title">新增公休日</div>
-    <div class="fr c2"><div class="fg"><label>日期</label><input type="date" id="h-date" value="${y}-${String(m).padStart(2,'0')}-01"></div>
-    <div class="fg"><label>說明</label><input type="text" id="h-note" placeholder="例：週休、國定假日"></div></div>
-    <button class="btn btn-p btn-sm" onclick="addHoliday()">＋ 新增公休日</button>
-    <div class="divider"></div>
-    <div class="card-title">${y}年${m}月 公休日（共 ${hols.length} 天）</div>
-    ${hols.length===0?'<div class="tmut tsm">尚無公休日記錄</div>':hols.map(h=>`<div class="holiday-row"><span style="background:var(--danger-bg);color:var(--danger);padding:2px 8px;border-radius:6px;font-size:12px">${h.date}</span><span class="tsm">${h.note||'公休'}</span><button class="btn btn-d btn-sm" style="margin-left:auto" onclick="delHoliday('${h.id}')">移除</button></div>`).join('')}
-  </div>
-  <div class="alert a-i mt12">公休日標記後，在日報清單中會顯示紅點，平均日營業額計算可自動排除公休日</div>`;
+  const weeklyOff=getWeeklyOff();
+
+  $('hb').innerHTML=`
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">🔁 固定週休設定</div>
+      <div class="tsm tmut" style="margin-bottom:10px">選擇固定公休的星期幾，套用後自動標記當月所有符合日期</div>
+      <div class="rf" style="gap:8px;margin-bottom:12px">
+        ${WEEKDAYS.map((d,i)=>`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid ${weeklyOff.includes(i)?'var(--milk-500)':'var(--border)'};background:${weeklyOff.includes(i)?'var(--milk-100)':'var(--warm-white)'};font-size:13px;font-weight:${weeklyOff.includes(i)?'500':'400'}">
+          <input type="checkbox" id="wd-${i}" ${weeklyOff.includes(i)?'checked':''} style="width:auto;margin:0" onchange="saveWeeklyOffUI()">
+          週${d}
+        </label>`).join('')}
+      </div>
+      <div class="rf" style="gap:8px">
+        <button class="btn btn-p btn-sm" onclick="applyWeeklyOff()">⚡ 套用到 ${y}年${m}月</button>
+        <span class="tsm tmut">會自動跳過已存在的日期</span>
+      </div>
+      <div id="weekly-result" class="mt8"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">＋ 單日新增公休</div>
+      <div class="fr c2">
+        <div class="fg"><label>日期</label><input type="date" id="h-date" value="${y}-${String(m).padStart(2,'0')}-01"></div>
+        <div class="fg"><label>說明</label><input type="text" id="h-note" placeholder="例：國定假日、臨時公休"></div>
+      </div>
+      <button class="btn btn-p btn-sm" onclick="addHoliday()">＋ 新增</button>
+      <div class="divider"></div>
+      <div class="card-title">${y}年${m}月 公休日（共 ${hols.length} 天）</div>
+      ${hols.length===0?'<div class="tmut tsm">尚無公休日記錄</div>':hols.map(h=>`<div class="holiday-row">
+        <span style="background:var(--danger-bg);color:var(--danger);padding:2px 8px;border-radius:6px;font-size:12px">${h.date}</span>
+        <span class="tsm">${h.note||'公休'}</span>
+        <button class="btn btn-d btn-sm" style="margin-left:auto" onclick="delHoliday('${h.id}')">移除</button>
+      </div>`).join('')}
+    </div>
+    <div class="alert a-i mt12">公休日標記後，日報清單顯示紅點；固定週休設定儲存於本機，可隨時調整</div>`;
 }
+
+function saveWeeklyOffUI(){
+  const arr=[];
+  WEEKDAYS.forEach((_,i)=>{if(document.getElementById('wd-'+i)?.checked)arr.push(i);});
+  saveWeeklyOff(arr);
+}
+
+async function applyWeeklyOff(){
+  const weeklyOff=getWeeklyOff();
+  if(!weeklyOff.length)return alert('請先勾選固定公休的星期幾');
+  const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);
+  // Get all days in month that match selected weekdays
+  const daysInMonth=new Date(y,m,0).getDate();
+  let added=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(y,m-1,d);
+    const weekday=date.getDay();
+    if(weeklyOff.includes(weekday)){
+      const dateStr=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(!C.holidays.some(h=>h.date===dateStr)){
+        const note=`週${WEEKDAYS[weekday]}固定公休`;
+        const[row]=await sbPost('holidays',{date:dateStr,note});
+        C.holidays.push(row);added++;
+      }
+    }
+  }
+  const res=$('weekly-result');
+  if(res)res.innerHTML=`<div class="alert a-ok">已新增 ${added} 個公休日${added===0?' （本月已全部標記）':''}</div>`;
+  rendHols();
+}
+
 async function addHoliday(){
   const date=$('h-date').value,note=$('h-note').value;
   if(!date)return alert('請選擇日期');
