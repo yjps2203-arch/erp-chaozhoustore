@@ -180,6 +180,21 @@ tr:hover td{background:var(--milk-50)}
 .tpl-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--border-light);border-radius:8px;margin-bottom:6px;background:var(--warm-white)}
 .tpl-apply-row{background:var(--info-bg);border:1px solid #b0c8e8;border-radius:10px;padding:12px 14px;margin-top:10px}
 
+/* ── QUICK PURCHASE ── */
+.qp-section{margin-top:20px;padding-top:20px;border-top:2px dashed var(--border)}
+.qp-section-title{font-size:14px;font-weight:500;color:var(--text-secondary);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.qp-list{margin-bottom:12px}
+.qp-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--milk-50);border:1px solid var(--border-light);border-radius:8px;margin-bottom:6px;flex-wrap:wrap}
+.qp-item-info{flex:1;min-width:0}
+.qp-item-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+.qp-item-meta{font-size:11px;color:var(--text-muted);margin-top:1px}
+.qp-item-amount{font-size:14px;font-weight:700;font-family:'Noto Serif TC',serif;color:var(--text-primary);white-space:nowrap}
+.qp-add-row{background:var(--warm-white);border:1px solid var(--border);border-radius:10px;padding:14px}
+.qp-add-title{font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px}
+.qp-total{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--milk-100);border-radius:8px;margin-bottom:12px}
+.qp-total-label{font-size:12px;color:var(--text-secondary)}
+.qp-total-val{font-size:18px;font-weight:700;font-family:'Noto Serif TC',serif}
+
 @media(max-width:768px){
   .inv-banner{padding:8px 14px}
   .be-grid{grid-template-columns:1fr 1fr}
@@ -467,12 +482,15 @@ async function navigate(page){
 // ══════════════════════════════════════════════
 //  QUICK INPUT
 // ══════════════════════════════════════════════
+let pendingPurchases = [];
+
 function renderQuick(){
   const today=new Date().toISOString().split('T')[0];
   const existing=C.daily.find(d=>d.date===today);
-  // 反推 總營業額 = store + ubereats原始
   const existTotal=existing?(Number(existing.store||0)+Number(existing.ubereats||0)):0;
   $('content').innerHTML=`<div class="qi-wrap">
+
+    <!-- 營業額區塊 -->
     <div class="qi-date-row">
       <input type="date" id="qi-date" value="${today}" onchange="checkExistingQuick()">
       ${isHoliday(today)?'<span style="background:var(--danger-bg);color:var(--danger);padding:4px 10px;border-radius:8px;font-size:12px">公休日</span>':''}
@@ -506,15 +524,72 @@ function renderQuick(){
       </div>
     </div>
     <div class="fg" style="margin-bottom:16px"><label>備註（可選）</label><input type="text" id="qi-note" placeholder="天氣、活動、特殊事件..." value="${existing?existing.note||'':''}"></div>
-    <button class="btn btn-p btn-lg qi-submit" id="qi-btn" onclick="saveQuick()">💾 儲存今日記錄</button>
+    <button class="btn btn-p btn-lg qi-submit" id="qi-btn" onclick="saveQuick()">💾 儲存今日營業額</button>
+
+    <!-- 進貨區塊 -->
+    <div class="qp-section">
+      <div class="qp-section-title">📦 快速進貨記錄</div>
+      <div class="qp-list" id="qp-list"></div>
+      <div class="qp-add-row">
+        <div class="qp-add-title">新增進貨項目</div>
+        <div class="fr c2" style="margin-bottom:8px">
+          <div class="fg"><label>類別</label>
+            <select id="qp-cat" onchange="updQpItems()">
+              <option value="A">A 食材</option>
+              <option value="B">B 耗材</option>
+            </select>
+          </div>
+          <div class="fg"><label>廠商</label>
+            <select id="qp-vendor">
+              <option value="">-- 選擇廠商 --</option>
+              ${vNames().map(v=>`<option value="${v}">${v}</option>`).join('')}
+              <option value="__c__">＋ 自行輸入</option>
+            </select>
+          </div>
+        </div>
+        <div id="qp-vendor-custom" style="display:none" class="fg" style="margin-bottom:8px">
+          <label>自訂廠商名稱</label>
+          <input type="text" id="qp-vendor-txt" placeholder="廠商名稱">
+        </div>
+        <div class="fr c2" style="margin-bottom:8px">
+          <div class="fg"><label>品項</label>
+            <select id="qp-item" onchange="togQpItem()">
+              ${iNamesA().map(i=>`<option value="${i}">${i}</option>`).join('')}
+              <option value="__c__">＋ 自行輸入</option>
+            </select>
+          </div>
+          <div class="fg"><label>金額</label>
+            <input type="number" id="qp-amount" placeholder="0" min="0" onkeydown="if(event.key==='Enter')addQpItem()">
+          </div>
+        </div>
+        <div id="qp-item-custom" style="display:none" class="fg" style="margin-bottom:8px">
+          <label>自訂品項名稱</label>
+          <input type="text" id="qp-item-txt" placeholder="品項名稱">
+        </div>
+        <button class="btn btn-s" style="width:100%;justify-content:center;margin-top:4px" onclick="addQpItem()">＋ 加入清單</button>
+      </div>
+      <div id="qp-save-wrap" style="display:none;margin-top:12px">
+        <div class="qp-total">
+          <div class="qp-total-label">本次進貨合計</div>
+          <div class="qp-total-val" id="qp-total-val">$0</div>
+        </div>
+        <button class="btn btn-p btn-lg qi-submit" id="qp-btn" onclick="saveQpItems()">💾 儲存進貨記錄</button>
+      </div>
+    </div>
+
   </div>`;
   calcQiTotal();
+  renderQpList();
+  $('qp-vendor').addEventListener('change',function(){
+    $('qp-vendor-custom').style.display=this.value==='__c__'?'block':'none';
+  });
 }
+
 function calcQiTotal(){
   const totalRev=Number($('qi-total-rev')?.value||0);
   const fp=Number($('qi-fp')?.value||0);
   const ub=Number($('qi-ub')?.value||0);
-  const store=Math.max(0, totalRev-ub);
+  const store=Math.max(0,totalRev-ub);
   const storeEl=$('qi-store');if(storeEl)storeEl.value=store||'';
   const adj=store+fp*.67+ub*.69;
   const raw=totalRev+fp;
@@ -543,8 +618,70 @@ async function saveQuick(){
   const store=Number($('qi-store').value||0);
   const data={date,store,foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),note:$('qi-note').value};
   const [row]=await sbPost('daily',data);C.daily.push(row);
-  toast('今日記錄已儲存 ✓','ok');
-  if(btn){btn.disabled=false;btn.innerHTML='💾 儲存今日記錄';}
+  toast('今日營業額已儲存 ✓','ok');
+  if(btn){btn.disabled=false;btn.innerHTML='💾 儲存今日營業額';}
+}
+
+// 進貨暫存清單
+function updQpItems(){
+  const cat=$('qp-cat')?.value;
+  const items=cat==='A'?iNamesA():iNamesB();
+  const sel=$('qp-item');
+  if(sel){sel.innerHTML=items.map(i=>`<option value="${i}">${i}</option>`).join('')+'<option value="__c__">＋ 自行輸入</option>';togQpItem();}
+}
+function togQpItem(){
+  const sel=$('qp-item'),row=$('qp-item-custom');
+  if(row)row.style.display=sel?.value==='__c__'?'block':'none';
+}
+function addQpItem(){
+  const cat=$('qp-cat')?.value;
+  const vSel=$('qp-vendor')?.value;
+  const vendor=vSel==='__c__'?($('qp-vendor-txt')?.value?.trim()||'其他'):vSel;
+  const iSel=$('qp-item')?.value;
+  const item=iSel==='__c__'?($('qp-item-txt')?.value?.trim()||'其他'):iSel;
+  const amount=Number($('qp-amount')?.value||0);
+  if(!amount)return alert('請填寫金額');
+  const date=$('qi-date')?.value||new Date().toISOString().split('T')[0];
+  pendingPurchases.push({date,category:cat,vendor,item,amount});
+  if($('qp-amount'))$('qp-amount').value='';
+  renderQpList();
+  toast(`已加入：${item} ${$$(amount)}`);
+}
+function removeQpItem(i){
+  pendingPurchases.splice(i,1);renderQpList();
+}
+function renderQpList(){
+  const list=$('qp-list'),wrap=$('qp-save-wrap'),totalEl=$('qp-total-val');
+  if(!list)return;
+  if(pendingPurchases.length===0){
+    list.innerHTML='<div class="tmut tsm" style="margin-bottom:10px">尚未加入項目，填寫下方表單後點「加入清單」</div>';
+    if(wrap)wrap.style.display='none';return;
+  }
+  const total=pendingPurchases.reduce((s,p)=>s+p.amount,0);
+  list.innerHTML=pendingPurchases.map((p,i)=>`<div class="qp-item">
+    <div class="qp-item-info">
+      <div class="qp-item-name">${p.item}</div>
+      <div class="qp-item-meta"><span class="tag ${p.category==='A'?'ta':'tb'}">${p.category==='A'?'A':'B'}</span>${p.vendor?' · '+p.vendor:''} · ${p.date}</div>
+    </div>
+    <div class="qp-item-amount">${$$(p.amount)}</div>
+    <button class="btn btn-d btn-sm" onclick="removeQpItem(${i})">✕</button>
+  </div>`).join('');
+  if(wrap)wrap.style.display='block';
+  if(totalEl)totalEl.textContent=$$(total);
+}
+async function saveQpItems(){
+  if(!pendingPurchases.length)return;
+  const btn=$('qp-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中...';}
+  for(const p of pendingPurchases){
+    const[row]=await sbPost('purchases',p);C.purchases.push(row);
+  }
+  const count=pendingPurchases.length;
+  pendingPurchases=[];
+  C.loaded['purchases']=false;
+  toast(`${count} 筆進貨記錄已儲存 ✓`,'ok');
+  renderQpList();
+  if(btn){btn.disabled=false;btn.innerHTML='💾 儲存進貨記錄';}
 }
 
 // ══════════════════════════════════════════════
