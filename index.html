@@ -430,7 +430,14 @@ const exYM=(y,m)=>C.expenses.filter(d=>d.year==y&&d.month==m);
 const stYM=(y,m)=>C.staff.filter(s=>s.year==y&&s.month==m);
 const holYM=(y,m)=>C.holidays.filter(h=>{const ym=getYM(h.date);return ym.y==y&&ym.m==m;});
 const targetYM=(y,m)=>C.targets.find(t=>t.year==y&&t.month==m);
-function rev(d){const st=Number(d.store||0),fp=Number(d.foodpanda||0)*.67,ub=Number(d.ubereats||0)*.69;return{store:st,fp,ub,total:st+fp+ub,raw:st+Number(d.foodpanda||0)+Number(d.ubereats||0)};}
+function getFPRate(){return 1-(Number(localStorage.getItem('erp_fp_rate')||33)/100);}
+function getUBRate(){return 1-(Number(localStorage.getItem('erp_ub_rate')||31)/100);}
+function getFPPct(){return Number(localStorage.getItem('erp_fp_rate')||33);}
+function getUBPct(){return Number(localStorage.getItem('erp_ub_rate')||31);}
+function rev(d){
+  const st=Number(d.store||0),fp=Number(d.foodpanda||0)*getFPRate(),ub=Number(d.ubereats||0)*getUBRate(),other=Number(d.other_income||0);
+  return{store:st,fp,ub,other,total:st+fp+ub+other,raw:st+Number(d.foodpanda||0)+Number(d.ubereats||0)};
+}
 const vNames=()=>C.vendors.map(v=>v.name);
 const iNamesA=()=>C.itemsA.map(v=>v.name);
 const iNamesB=()=>C.itemsB.map(v=>v.name);
@@ -495,23 +502,30 @@ function renderQuick(){
       <input type="date" id="qi-date" value="${today}" onchange="checkExistingQuick()">
       ${isHoliday(today)?'<span style="background:var(--danger-bg);color:var(--danger);padding:4px 10px;border-radius:8px;font-size:12px">公休日</span>':''}
     </div>
-    ${existing?`<div class="alert a-w" style="margin-bottom:16px">此日期已有記錄，儲存將覆蓋舊資料</div>`:''}
+    ${existing?'<div class="alert a-w" style="margin-bottom:16px">此日期已有記錄，儲存將覆蓋舊資料</div>':''}
     <div class="qi-field">
       <div class="qi-label"><span>💰 總營業額（POS 顯示）</span><span class="tmut tsm">元</span></div>
       <input type="number" class="qi-input" id="qi-total-rev" placeholder="0" min="0" value="${existing?existTotal:''}" oninput="calcQiTotal()">
     </div>
     <div class="qi-field">
-      <div class="qi-label"><span>🛵 Foodpanda（原始）</span><span style="color:var(--danger);font-size:11px">扣33% 後實收</span></div>
-      <input type="number" class="qi-input" id="qi-fp" placeholder="0" min="0" value="${existing?existing.foodpanda:''}" oninput="calcQiTotal()">
+      <div class="qi-label"><span>🛵 Foodpanda（原始）</span><span style="color:var(--danger);font-size:11px">扣${getFPPct()}% 後實收</span></div>
+      <input type="number" class="qi-input" id="qi-fp" placeholder="0" min="0" value="${existing?existing.foodpanda||'':''}" oninput="calcQiTotal()">
     </div>
     <div class="qi-field">
-      <div class="qi-label"><span>🚗 Uber Eats（原始）</span><span style="color:var(--danger);font-size:11px">扣31% 後實收</span></div>
-      <input type="number" class="qi-input" id="qi-ub" placeholder="0" min="0" value="${existing?existing.ubereats:''}" oninput="calcQiTotal()">
+      <div class="qi-label"><span>🚗 Uber Eats（原始）</span><span style="color:var(--danger);font-size:11px">扣${getUBPct()}% 後實收</span></div>
+      <input type="number" class="qi-input" id="qi-ub" placeholder="0" min="0" value="${existing?existing.ubereats||'':''}" oninput="calcQiTotal()">
     </div>
     <div class="qi-field">
       <div class="qi-label"><span>🏪 門市營業額</span><span style="color:var(--info);font-size:11px">自動計算 = 總營業額 - UE</span></div>
-      <input type="number" class="qi-input" id="qi-store" placeholder="0" readonly
-        style="background:var(--milk-100);color:var(--text-secondary);cursor:not-allowed" value="${existing?existing.store:''}">
+      <input type="number" class="qi-input" id="qi-store" placeholder="0" readonly style="background:var(--milk-100);color:var(--text-secondary);cursor:not-allowed" value="${existing?existing.store||'':''}">
+    </div>
+    <div class="qi-field">
+      <div class="qi-label"><span>💵 其他收入</span><span class="tmut tsm">不定時收入（可空白）</span></div>
+      <input type="number" class="qi-input" id="qi-other" placeholder="0" min="0" value="${existing?existing.other_income||'':''}" oninput="calcQiTotal()">
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label>其他收入說明</label>
+      <input type="text" id="qi-other-note" placeholder="例：廢油收入、場地租借" value="${existing?existing.other_income_note||'':''}">
     </div>
     <div class="qi-total">
       <div>
@@ -519,8 +533,8 @@ function renderQuick(){
         <div class="qi-total-val" id="qi-total">$0</div>
       </div>
       <div style="text-align:right">
-        <div class="qi-total-label">原始合計</div>
-        <div style="font-size:14px;color:var(--text-muted)" id="qi-raw">$0</div>
+        <div class="qi-total-label">其他收入</div>
+        <div style="font-size:14px;color:var(--success)" id="qi-other-disp">$0</div>
       </div>
     </div>
     <div class="fg" style="margin-bottom:16px"><label>備註（可選）</label><input type="text" id="qi-note" placeholder="天氣、活動、特殊事件..." value="${existing?existing.note||'':''}"></div>
@@ -533,40 +547,39 @@ function renderQuick(){
       <div class="qp-add-row">
         <div class="qp-add-title">新增進貨項目</div>
         <div class="fr c2" style="margin-bottom:8px">
+          <div class="fg"><label>進貨日期</label><input type="date" id="qp-date" value="${today}"></div>
           <div class="fg"><label>類別</label>
             <select id="qp-cat" onchange="updQpItems()">
-              <option value="A">A 食材</option>
-              <option value="B">B 耗材</option>
+              <option value="A">A 食材</option><option value="B">B 耗材</option>
             </select>
           </div>
+        </div>
+        <div class="fr c2" style="margin-bottom:8px">
           <div class="fg"><label>廠商</label>
             <select id="qp-vendor">
               <option value="">-- 選擇廠商 --</option>
-              ${vNames().map(v=>`<option value="${v}">${v}</option>`).join('')}
+              ${vNames().map(v=>'<option value="'+v+'">'+v+'</option>').join('')}
               <option value="__c__">＋ 自行輸入</option>
             </select>
           </div>
-        </div>
-        <div id="qp-vendor-custom" style="display:none" class="fg" style="margin-bottom:8px">
-          <label>自訂廠商名稱</label>
-          <input type="text" id="qp-vendor-txt" placeholder="廠商名稱">
-        </div>
-        <div class="fr c2" style="margin-bottom:8px">
           <div class="fg"><label>品項</label>
             <select id="qp-item" onchange="togQpItem()">
-              ${iNamesA().map(i=>`<option value="${i}">${i}</option>`).join('')}
+              ${iNamesA().map(i=>'<option value="'+i+'">'+i+'</option>').join('')}
               <option value="__c__">＋ 自行輸入</option>
             </select>
           </div>
-          <div class="fg"><label>金額</label>
-            <input type="number" id="qp-amount" placeholder="0" min="0" onkeydown="if(event.key==='Enter')addQpItem()">
-          </div>
         </div>
-        <div id="qp-item-custom" style="display:none" class="fg" style="margin-bottom:8px">
-          <label>自訂品項名稱</label>
-          <input type="text" id="qp-item-txt" placeholder="品項名稱">
+        <div id="qp-vendor-custom" style="display:none;margin-bottom:8px" class="fg">
+          <label>自訂廠商</label><input type="text" id="qp-vendor-txt" placeholder="廠商名稱">
         </div>
-        <button class="btn btn-s" style="width:100%;justify-content:center;margin-top:4px" onclick="addQpItem()">＋ 加入清單</button>
+        <div id="qp-item-custom" style="display:none;margin-bottom:8px" class="fg">
+          <label>自訂品項</label><input type="text" id="qp-item-txt" placeholder="品項名稱">
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label>金額</label>
+          <input type="number" id="qp-amount" placeholder="0" min="0" onkeydown="if(event.key==='Enter')addQpItem()">
+        </div>
+        <button class="btn btn-s" style="width:100%;justify-content:center" onclick="addQpItem()">＋ 加入清單</button>
       </div>
       <div id="qp-save-wrap" style="display:none;margin-top:12px">
         <div class="qp-total">
@@ -589,12 +602,13 @@ function calcQiTotal(){
   const totalRev=Number($('qi-total-rev')?.value||0);
   const fp=Number($('qi-fp')?.value||0);
   const ub=Number($('qi-ub')?.value||0);
+  const other=Number($('qi-other')?.value||0);
   const store=Math.max(0,totalRev-ub);
   const storeEl=$('qi-store');if(storeEl)storeEl.value=store||'';
-  const adj=store+fp*.67+ub*.69;
-  const raw=totalRev+fp;
-  const t=$('qi-total'),r=$('qi-raw');
-  if(t)t.textContent=$$(adj);if(r)r.textContent=$$(raw);
+  const adj=store+fp*getFPRate()+ub*getUBRate()+other;
+  const t=$('qi-total'),od=$('qi-other-disp');
+  if(t)t.textContent=$$(adj);
+  if(od)od.textContent=other>0?$$(other):'$0';
 }
 function checkExistingQuick(){
   const date=$('qi-date')?.value;
@@ -604,9 +618,11 @@ function checkExistingQuick(){
     $('qi-total-rev').value=existTotal||'';
     $('qi-fp').value=existing.foodpanda||'';
     $('qi-ub').value=existing.ubereats||'';
+    $('qi-other').value=existing.other_income||'';
+    $('qi-other-note').value=existing.other_income_note||'';
     $('qi-note').value=existing.note||'';
   } else {
-    $('qi-total-rev').value='';$('qi-fp').value='';$('qi-ub').value='';$('qi-note').value='';
+    ['qi-total-rev','qi-fp','qi-ub','qi-other','qi-other-note','qi-note'].forEach(id=>{if($(id))$(id).value='';});
   }
   calcQiTotal();
 }
@@ -616,8 +632,8 @@ async function saveQuick(){
   const exists=C.daily.find(d=>d.date===date);
   if(exists){await sbDelete('daily',exists.id);C.daily=C.daily.filter(d=>d.id!==exists.id);}
   const store=Number($('qi-store').value||0);
-  const data={date,store,foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),note:$('qi-note').value};
-  const [row]=await sbPost('daily',data);C.daily.push(row);
+  const data={date,store,foodpanda:Number($('qi-fp').value||0),ubereats:Number($('qi-ub').value||0),other_income:Number($('qi-other')?.value||0),other_income_note:$('qi-other-note')?.value||'',note:$('qi-note').value};
+  const[row]=await sbPost('daily',data);C.daily.push(row);
   toast('今日營業額已儲存 ✓','ok');
   if(btn){btn.disabled=false;btn.innerHTML='💾 儲存今日營業額';}
 }
@@ -641,7 +657,7 @@ function addQpItem(){
   const item=iSel==='__c__'?($('qp-item-txt')?.value?.trim()||'其他'):iSel;
   const amount=Number($('qp-amount')?.value||0);
   if(!amount)return alert('請填寫金額');
-  const date=$('qi-date')?.value||new Date().toISOString().split('T')[0];
+  const date=$('qp-date')?.value||new Date().toISOString().split('T')[0];
   pendingPurchases.push({date,category:cat,vendor,item,amount});
   if($('qp-amount'))$('qp-amount').value='';
   renderQpList();
@@ -754,49 +770,92 @@ function updDash(){
 //  DAILY
 // ══════════════════════════════════════════════
 function renderDaily(){
-  $('content').innerHTML=`<div class="sh"><div class="st">每日營業額記錄</div><div class="rf">${ymSel(selYear,selMonth,'filtDaily()')}<button class="btn btn-p btn-sm" onclick="showDailyModal()">＋ 新增</button></div></div><div id="ds"></div><div class="card mt12"><div class="card-title">日報清單</div><div class="sx"><table id="dt"></table></div></div>`;
+  $('content').innerHTML='<div class="sh"><div class="st">每日營業額記錄</div><div class="rf">'+ymSel(selYear,selMonth,'filtDaily()')+'<button class="btn btn-p btn-sm" onclick="showDailyModal()">＋ 新增</button></div></div><div id="ds"></div><div class="card mt12"><div class="card-title">日報清單</div><div class="sx"><table id="dt"></table></div></div>';
   filtDaily();
 }
 function filtDaily(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const days=[...dyYM(y,m)].sort((a,b)=>a.date.localeCompare(b.date));
-  const tS=days.reduce((s,d)=>s+Number(d.store||0),0),tFP=days.reduce((s,d)=>s+Number(d.foodpanda||0),0),tUB=days.reduce((s,d)=>s+Number(d.ubereats||0),0),tAdj=days.reduce((s,d)=>s+rev(d).total,0);
-  const ds=$('ds');if(ds)ds.innerHTML=`<div class="cg c4"><div class="metric"><div class="ml">門市</div><div class="mv">${$$(tS)}</div></div><div class="metric"><div class="ml">Foodpanda（原始）</div><div class="mv">${$$(tFP)}</div><div class="ms">扣33%→${$$(tFP*.67)}</div></div><div class="metric"><div class="ml">Uber Eats（原始）</div><div class="mv">${$$(tUB)}</div><div class="ms">扣31%→${$$(tUB*.69)}</div></div><div class="metric"><div class="ml">本月實收合計</div><div class="mv fser">${$$(tAdj)}</div></div></div>`;
-  const tbl=$('dt');if(tbl)tbl.innerHTML=`<thead><tr><th>日期</th><th>門市</th><th>Foodpanda</th><th>Uber Eats</th><th>原始</th><th>實收</th><th>備註</th><th></th></tr></thead><tbody>${days.map(d=>{const r=rev(d);const hol=isHoliday(d.date);return`<tr style="${hol?'background:var(--danger-bg)':''}"><td class="nw">${d.date}${hol?'<span class="holiday-dot"></span>':''}</td><td>${$$(d.store||0)}</td><td>${$$(d.foodpanda||0)}</td><td>${$$(d.ubereats||0)}</td><td>${$$(r.raw)}</td><td class="fb">${$$(r.total)}</td><td class="tmut tsm">${d.note||'—'}</td><td><button class="btn btn-d btn-sm" onclick="delDaily('${d.id}')">刪除</button></td></tr>`;}).join('')}${days.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">尚無記錄</td></tr>':''}</tbody>`;
+  const tS=days.reduce((s,d)=>s+Number(d.store||0),0);
+  const tFP=days.reduce((s,d)=>s+Number(d.foodpanda||0),0);
+  const tUB=days.reduce((s,d)=>s+Number(d.ubereats||0),0);
+  const tOther=days.reduce((s,d)=>s+Number(d.other_income||0),0);
+  const tAdj=days.reduce((s,d)=>s+rev(d).total,0);
+  const ds=$('ds');
+  if(ds)ds.innerHTML='<div class="cg c4">'
+    +'<div class="metric"><div class="ml">門市</div><div class="mv">'+$$(tS)+'</div></div>'
+    +'<div class="metric"><div class="ml">Foodpanda（原始）</div><div class="mv">'+$$(tFP)+'</div><div class="ms">扣'+getFPPct()+'%→'+$$(tFP*getFPRate())+'</div></div>'
+    +'<div class="metric"><div class="ml">Uber Eats（原始）</div><div class="mv">'+$$(tUB)+'</div><div class="ms">扣'+getUBPct()+'%→'+$$(tUB*getUBRate())+'</div></div>'
+    +'<div class="metric"><div class="ml">本月實收合計</div><div class="mv fser">'+$$(tAdj)+(tOther>0?'<div class="ms tok">含其他收入 '+$$(tOther)+'</div>':'')+'</div></div>'
+    +'</div>';
+  const rows=days.map(d=>{
+    const r=rev(d),hol=isHoliday(d.date);
+    return '<tr style="'+(hol?'background:var(--danger-bg)':'')+'">'
+      +'<td class="nw">'+d.date+(hol?'<span class="holiday-dot"></span>':'')+'</td>'
+      +'<td>'+$$(d.store||0)+'</td>'
+      +'<td>'+$$(d.foodpanda||0)+'</td>'
+      +'<td>'+$$(d.ubereats||0)+'</td>'
+      +'<td>'+(d.other_income>0?'<span class="tok">'+$$(d.other_income)+'</span>'+(d.other_income_note?'<div class="tsm tmut">'+d.other_income_note+'</div>':''):'—')+'</td>'
+      +'<td class="fb">'+$$(r.total)+'</td>'
+      +'<td class="tmut tsm">'+(d.note||'—')+'</td>'
+      +'<td class="nw"><button class="btn btn-info btn-sm" onclick="editDaily(\''+d.id+'\')">編輯</button> <button class="btn btn-d btn-sm" onclick="delDaily(\''+d.id+'\')">刪除</button></td>'
+      +'</tr>';
+  }).join('');
+  const tbl=$('dt');
+  if(tbl)tbl.innerHTML='<thead><tr><th>日期</th><th>門市</th><th>FP</th><th>UE</th><th>其他</th><th>實收</th><th>備註</th><th></th></tr></thead><tbody>'
+    +rows+(days.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">尚無記錄</td></tr>':'')
+    +'</tbody>';
 }
-function showDailyModal(){
+
+function showDailyModal(d){
   const today=new Date().toISOString().split('T')[0];
-  showModal(`<div class="mtitle">新增每日營業額</div>
-    <div class="fr c2">
-      <div class="fg"><label>日期</label><input type="date" id="d-d" value="${today}"></div>
-      <div class="fg"><label>💰 總營業額（POS 顯示）</label><input type="number" id="d-total" placeholder="0" min="0" oninput="calcDailyStore()"></div>
-    </div>
-    <div class="fr c2">
-      <div class="fg"><label>🛵 Foodpanda（原始）</label><input type="number" id="d-f" placeholder="0" min="0" oninput="calcDailyStore()"></div>
-      <div class="fg"><label>🚗 Uber Eats（原始）</label><input type="number" id="d-u" placeholder="0" min="0" oninput="calcDailyStore()"></div>
-    </div>
-    <div class="fg mt8">
-      <label>🏪 門市營業額 <span style="color:var(--info);font-size:11px">自動計算 = 總營業額 - UE</span></label>
-      <input type="number" id="d-s" placeholder="0" readonly style="background:var(--milk-100);color:var(--text-secondary)">
-    </div>
-    <div class="fg mt8"><label>備註</label><input type="text" id="d-n" placeholder="可選"></div>
-    <div class="divider"></div>
-    <div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsd" onclick="saveDaily()">儲存</button></div>`);
+  const isEdit=!!d;
+  const existTotal=d?(Number(d.store||0)+Number(d.ubereats||0)):0;
+  showModal('<div class="mtitle">'+(isEdit?'編輯每日營業額':'新增每日營業額')+'</div>'
+    +'<div class="fr c2">'
+      +'<div class="fg"><label>日期</label><input type="date" id="d-d" value="'+(d?d.date:today)+'"'+(isEdit?' readonly style="background:var(--milk-100)"':'')+' ></div>'
+      +'<div class="fg"><label>💰 總營業額（POS）</label><input type="number" id="d-total" placeholder="0" min="0" value="'+(d?existTotal:'')+'" oninput="calcDailyStore()"></div>'
+    +'</div>'
+    +'<div class="fr c2">'
+      +'<div class="fg"><label>🛵 Foodpanda（原始）</label><input type="number" id="d-f" placeholder="0" min="0" value="'+(d?d.foodpanda||'':'')+'" oninput="calcDailyStore()"></div>'
+      +'<div class="fg"><label>🚗 Uber Eats（原始）</label><input type="number" id="d-u" placeholder="0" min="0" value="'+(d?d.ubereats||'':'')+'" oninput="calcDailyStore()"></div>'
+    +'</div>'
+    +'<div class="fg mt8"><label>🏪 門市 <span style="color:var(--info);font-size:11px">自動 = 總 - UE</span></label>'
+      +'<input type="number" id="d-s" readonly style="background:var(--milk-100);color:var(--text-secondary)" value="'+(d?d.store||'':'')+'"></div>'
+    +'<div class="fr c2 mt8">'
+      +'<div class="fg"><label>💵 其他收入</label><input type="number" id="d-other" placeholder="0" min="0" value="'+(d?d.other_income||'':'')+'"></div>'
+      +'<div class="fg"><label>其他收入說明</label><input type="text" id="d-other-note" placeholder="例：廢油收入" value="'+(d?d.other_income_note||'':'')+'"></div>'
+    +'</div>'
+    +'<div class="fg mt8"><label>備註</label><input type="text" id="d-n" placeholder="可選" value="'+(d?d.note||'':'')+'"></div>'
+    +'<input type="hidden" id="d-edit-id" value="'+(d?d.id:'')+'">'
+    +'<div class="divider"></div>'
+    +'<div class="rf" style="justify-content:flex-end;gap:8px"><button class="btn btn-s" onclick="closeModal()">取消</button><button class="btn btn-p" id="bsd" onclick="saveDaily()">儲存</button></div>');
+  if(d)calcDailyStore();
+}
+function editDaily(id){
+  const d=C.daily.find(x=>x.id===id);if(d)showDailyModal(d);
 }
 function calcDailyStore(){
-  const total=Number($('d-total')?.value||0);
-  const ub=Number($('d-u')?.value||0);
-  const store=Math.max(0,total-ub);
+  const store=Math.max(0,Number($('d-total')?.value||0)-Number($('d-u')?.value||0));
   const el=$('d-s');if(el)el.value=store||'';
 }
 async function saveDaily(){
   const date=$('d-d').value;if(!date)return alert('請選擇日期');
+  const editId=$('d-edit-id')?.value;
   const btn=$('bsd');if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> 儲存中';}
-  const exists=C.daily.find(d=>d.date===date);
-  if(exists){if(!confirm('此日期已有記錄，確定覆蓋？')){if(btn){btn.disabled=false;btn.textContent='儲存';}return;}await sbDelete('daily',exists.id);C.daily=C.daily.filter(d=>d.id!==exists.id);}
-  const data={date,store:Number($('d-s').value||0),foodpanda:Number($('d-f').value||0),ubereats:Number($('d-u').value||0),note:$('d-n').value};
-  const [row]=await sbPost('daily',data);C.daily.push(row);
-  toast('已儲存','ok');closeModal();filtDaily();
+  const data={store:Number($('d-s').value||0),foodpanda:Number($('d-f').value||0),ubereats:Number($('d-u').value||0),other_income:Number($('d-other')?.value||0),other_income_note:$('d-other-note')?.value||'',note:$('d-n').value};
+  if(editId){
+    const[row]=await sbPatch('daily',editId,data);
+    const idx=C.daily.findIndex(x=>x.id===editId);
+    if(idx>=0)Object.assign(C.daily[idx],row[0]||data);
+    toast('已更新','ok');
+  } else {
+    const exists=C.daily.find(d=>d.date===date);
+    if(exists){if(!confirm('此日期已有記錄，確定覆蓋？')){if(btn){btn.disabled=false;btn.textContent='儲存';}return;}await sbDelete('daily',exists.id);C.daily=C.daily.filter(d=>d.id!==exists.id);}
+    const[row]=await sbPost('daily',{date,...data});C.daily.push(row);
+    toast('已儲存','ok');
+  }
+  closeModal();filtDaily();
 }
 async function delDaily(id){if(!confirm('確定刪除？'))return;await sbDelete('daily',id);C.daily=C.daily.filter(d=>d.id!==id);toast('已刪除');filtDaily();}
 
@@ -994,7 +1053,9 @@ function rendMonthly(){
   const y=Number($('ym-y')?.value||selYear),m=Number($('ym-m')?.value||selMonth);selYear=y;selMonth=m;
   const days=dyYM(y,m),purs=puYM(y,m),exps=exYM(y,m),staff=stYM(y,m),hols=holYM(y,m);
   const stR=days.reduce((s,d)=>s+Number(d.store||0),0),fpRaw=days.reduce((s,d)=>s+Number(d.foodpanda||0),0),ubRaw=days.reduce((s,d)=>s+Number(d.ubereats||0),0);
-  const fpA=fpRaw*.67,ubA=ubRaw*.69,tAdj=stR+fpA+ubA,wD=days.length,holD=hols.length;
+  const fpA=fpRaw*getFPRate(),ubA=ubRaw*getUBRate();
+  const otherRev=days.reduce((s,d)=>s+Number(d.other_income||0),0);
+  const tAdj=stR+fpA+ubA+otherRev,wD=days.length,holD=hols.length;
   const pC=purs.reduce((s,p)=>s+Number(p.amount||0),0),sC=staff.reduce((s,st)=>s+Number(st.salary||0),0),oC=exps.reduce((s,e)=>s+Number(e.amount||0),0),tExp=pC+sC+oC,profit=tAdj-tExp;
   let pm=m-1,py=y;if(pm<1){pm=12;py--;}
   const prevA=dyYM(py,pm).reduce((s,d)=>s+rev(d).total,0),gr=prevA>0?((tAdj-prevA)/prevA*100).toFixed(1):null;
@@ -1012,11 +1073,12 @@ function rendMonthly(){
       <div class="card"><div class="card-title">營業額明細</div><table>
         <tr><td>門市</td><td class="tr">${$$(stR)}</td></tr>
         <tr><td>Foodpanda 原始</td><td class="tr">${$$(fpRaw)}</td></tr>
-        <tr><td class="tmut tsm">扣33%</td><td class="tr tmut">-${$$(fpRaw*.33)}</td></tr>
+        <tr><td class="tmut tsm">扣${getFPPct()}%</td><td class="tr tmut">-${$$(fpRaw*(getFPPct()/100))}</td></tr>
         <tr><td>FP 實收</td><td class="tr">${$$(fpA)}</td></tr>
         <tr><td>Uber Eats 原始</td><td class="tr">${$$(ubRaw)}</td></tr>
-        <tr><td class="tmut tsm">扣31%</td><td class="tr tmut">-${$$(ubRaw*.31)}</td></tr>
+        <tr><td class="tmut tsm">扣${getUBPct()}%</td><td class="tr tmut">-${$$(ubRaw*(getUBPct()/100))}</td></tr>
         <tr><td>UE 實收</td><td class="tr">${$$(ubA)}</td></tr>
+        ${otherRev>0?`<tr><td class="tok">其他收入</td><td class="tr tok">${$$(otherRev)}</td></tr>`:''}
         <tr><td class="fb">月總實收</td><td class="tr fb">${$$(tAdj)}</td></tr>
       </table></div>
       <div class="card"><div class="card-title">支出明細</div><table>
@@ -1226,13 +1288,10 @@ function saveExpTemplates(tpls){localStorage.setItem('erp_exp_tpl',JSON.stringif
 
 function renderExpTemplateSection(){
   const tpls=getExpTemplates();
-  return `<div class="tpl-apply-row">
-    <div style="font-size:12px;font-weight:500;color:var(--info);margin-bottom:8px">🔁 固定支出範本</div>
-    ${tpls.length===0?'<div class="tsm tmut">尚未設定範本，請至系統設定 → 固定支出範本新增</div>':`
-      <div class="tsm tmut" style="margin-bottom:8px">共 ${tpls.length} 個項目，合計 ${$$(tpls.reduce((s,t)=>s+Number(t.amount),0))}</div>
-      <button class="btn btn-info btn-sm" onclick="applyExpTemplates()">⚡ 一鍵套用本月固定支出</button>
-    `}
-  </div>`;
+  const inner=tpls.length===0
+    ?'<div class="tsm tmut">尚未設定範本，請至系統設定 → 固定支出範本新增</div>'
+    :'<div class="tsm tmut" style="margin-bottom:8px">共 '+tpls.length+' 個項目，合計 '+$$(tpls.reduce((s,t)=>s+Number(t.amount),0))+'</div><button class="btn btn-info btn-sm" onclick="applyExpTemplates()">⚡ 一鍵套用本月固定支出</button>';
+  return '<div class="tpl-apply-row"><div style="font-size:12px;font-weight:500;color:var(--info);margin-bottom:8px">🔁 固定支出範本</div>'+inner+'</div>';
 }
 
 async function applyExpTemplates(){
@@ -1365,6 +1424,24 @@ function renderSettings(){
   </div>
 
   <div class="card" style="margin-bottom:12px">
+    <div class="card-title">🚀 外送平台抽成設定</div>
+    <div class="tsm tmut" style="margin-bottom:12px">平台調整抽成比例時，在此修改，所有計算自動套用</div>
+    <div class="fr c2">
+      <div class="fg">
+        <label>🛵 Foodpanda 抽成比例（%）</label>
+        <input type="number" id="fp-rate" placeholder="33" min="0" max="99" value="${getFPPct()}" oninput="previewRates()">
+        <div class="tsm tmut mt8">實收比例：<span id="fp-keep">${(100-getFPPct())}%</span></div>
+      </div>
+      <div class="fg">
+        <label>🚗 Uber Eats 抽成比例（%）</label>
+        <input type="number" id="ub-rate" placeholder="31" min="0" max="99" value="${getUBPct()}" oninput="previewRates()">
+        <div class="tsm tmut mt8">實收比例：<span id="ub-keep">${(100-getUBPct())}%</span></div>
+      </div>
+    </div>
+    <button class="btn btn-p btn-sm mt8" onclick="saveRates()">儲存抽成設定</button>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
     <div class="card-title">🔁 固定支出範本</div>
     <div class="tsm tmut" style="margin-bottom:10px">設定每月固定支出，換月後一鍵套用，不用重複填寫</div>
     <div id="tpl-list">${tpls.map((t,i)=>`<div class="tpl-item"><span class="tsm fb">${t.type}</span><span class="tsm">${$$(t.amount)}</span><button class="btn btn-d btn-sm" onclick="delExpTpl(${i})">✕</button></div>`).join('')}${tpls.length===0?'<div class="tsm tmut">尚無範本</div>':''}</div>
@@ -1442,6 +1519,23 @@ function delExpTpl(idx){
   toast('已移除');renderSettings();
 }
 function disableNotify(){localStorage.removeItem('erp_notify');toast('通知已關閉');renderSettings();}
+
+// 抽成設定
+function previewRates(){
+  const fp=Number($('fp-rate')?.value||33);
+  const ub=Number($('ub-rate')?.value||31);
+  const fk=$('fp-keep'),uk=$('ub-keep');
+  if(fk)fk.textContent=(100-fp)+'%';
+  if(uk)uk.textContent=(100-ub)+'%';
+}
+function saveRates(){
+  const fp=Number($('fp-rate')?.value||33);
+  const ub=Number($('ub-rate')?.value||31);
+  if(fp<=0||fp>=100||ub<=0||ub>=100)return alert('抽成比例請填 1～99 之間');
+  localStorage.setItem('erp_fp_rate',fp);
+  localStorage.setItem('erp_ub_rate',ub);
+  toast(`已儲存：FP ${fp}%、UE ${ub}%`,'ok');
+}
 
 // Target
 async function showCurrentTarget(){
